@@ -30,11 +30,27 @@
         #canvas { position: relative; width: 100%; height: 600px; background: white; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; }
         #canvas svg.relation-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
         .member { position: absolute; width: 80px; text-align: center; cursor: grab; user-select: none; z-index: 2; }
-        .member-symbol { width: 60px; height: 60px; margin: 0 auto 4px; border: 3px solid; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; background: white; }
+        .member-symbol { width: 60px; height: 60px; margin: 0 auto 4px; border: 3px solid; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; background: white; position: relative; overflow: hidden; }
         .member-symbol.male { border-color: #4a90e2; border-radius: 4px; color: #4a90e2; }
         .member-symbol.female { border-color: #f48fb1; border-radius: 50%; color: #f48fb1; }
         .member-symbol.unknown { border-color: #9b59b6; border-radius: 0; transform: rotate(45deg); width: 42px; height: 42px; margin: 12px auto 8px; color: #9b59b6; }
-        .member-symbol.deceased::after { content: ''; position: absolute; top: 50%; left: -20%; width: 140%; height: 3px; background: #333; transform: rotate(45deg); }
+        /* 已故成員顯示交叉符號（X） */
+        .member-symbol.deceased::before,
+        .member-symbol.deceased::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: -20%;
+            width: 140%;
+            height: 3px;
+            background: #333;
+        }
+        .member-symbol.deceased::before {
+            transform: rotate(45deg);
+        }
+        .member-symbol.deceased::after {
+            transform: rotate(-45deg);
+        }
         .member-name { font-size: 0.9rem; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 4px; }
         .member-age, .member-occupation, .member-note { font-size: 0.8rem; margin-top: 2px; }
         .member-age { color: #666; }
@@ -78,7 +94,7 @@
                     </ol>
                     子女線會從父母連線的中間（或單親的符號）向下連接到子女。
                 </li>
-                <li><strong>編輯成員：</strong>點擊任一成員，右側會顯示屬性面板，可修改姓名、性別、年齡、職業、備註、已故狀態，以及配偶／伴侶的關係狀態。</li>
+                <li><strong>編輯成員：</strong>點擊任一成員，右側會顯示屬性面板，可修改姓名、性別、年齡、職業、備註、已故狀態（顯示交叉符號），以及配偶／伴侶的關係狀態。</li>
                 <li><strong>刪除成員：</strong>先點選成員，再點擊側邊欄的「🗑️ 刪除成員」。</li>
                 <li><strong>文字方塊：</strong>點擊「📝 文字方塊」按鈕可在畫布新增文字方塊。拖曳上方黃色橫條可移動，點擊內容區即可直接輸入文字。點擊右上角「×」或選中後按 Delete 鍵可刪除。<span style="color:#e67e22;">※ 匯出 PNG 時不會顯示拖曳把手與刪除按鈕。</span></li>
                 <li><strong>文字解析自動繪圖：</strong>在上方文字框輸入家庭描述，點擊「解析文字」，系統會嘗試自動解析並繪製家庭圖草圖，之後方便你作出更改與修正。若畫布已有成員，會詢問是否清除後重新繪製。<br>
@@ -126,7 +142,7 @@
             <label>年齡：<input type="text" id="edit-age" placeholder="例如 45 或 45歲"></label>
             <label>職業：<input type="text" id="edit-occupation" placeholder="例如 教師"></label>
             <label>備註：<input type="text" id="edit-note" placeholder="例如 長期病患"></label>
-            <label><input type="checkbox" id="edit-deceased"> 已故</label>
+            <label><input type="checkbox" id="edit-deceased"> 已故（交叉符號）</label>
             <div id="spouse-status-area" style="display:none;">
                 <label>配偶狀態：</label>
                 <select id="spouse-status-select">
