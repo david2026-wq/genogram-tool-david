@@ -1,3 +1,1340 @@
-html
-<h1>Hello, Genogram Tool</h1>
-<p>This is my first page.</p>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>家庭圖繪製工具（基礎版）</title>
+    <!-- html2canvas for PNG export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: "Microsoft JhengHei", sans-serif; background: #f5f5f5; display: flex; justify-content: center; padding: 20px; }
+        .app-container { display: flex; gap: 20px; max-width: 1200px; width: 100%; }
+        .main-area { flex: 1; }
+        .instruction-box { background: #eef7ff; border: 1px solid #4a90e2; border-radius: 8px; padding: 15px; margin-bottom: 20px; }
+        .instruction-box summary { font-weight: bold; color: #2c3e50; cursor: pointer; }
+        .instruction-box ol { margin-left: 20px; margin-top: 10px; }
+        .instruction-box li { margin-bottom: 8px; }
+        .parser-section { background: white; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 20px; }
+        .parser-section textarea { width: 100%; height: 70px; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; }
+        .parser-section .parse-btn { margin-top: 10px; padding: 8px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .parser-section .parse-result { margin-top: 10px; padding: 10px; background: #fafafa; border-left: 4px solid #4a90e2; font-size: 0.9rem; }
+        .parser-section .format-note { font-size: 0.85rem; color: #888; margin-top: 5px; }
+        .toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+        .toolbar button { padding: 10px 15px; border: none; border-radius: 6px; background: #4a90e2; color: white; cursor: pointer; }
+        .toolbar button.active-mode { background: #e67e22; }
+        .toolbar button.finish-child-btn { background: #27ae60; display: none; }
+        .toolbar button.export-btn { background: #8e44ad; }
+        .toolbar button.import-btn { background: #16a085; }
+        .toolbar button.text-box-btn { background: #e67e22; }
+        #canvas { position: relative; width: 100%; height: 600px; background: white; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; }
+        #canvas svg.relation-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        .member { position: absolute; width: 80px; text-align: center; cursor: grab; user-select: none; z-index: 2; }
+        .member-symbol { width: 60px; height: 60px; margin: 0 auto 4px; border: 3px solid; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; background: white; }
+        .member-symbol.male { border-color: #4a90e2; border-radius: 4px; color: #4a90e2; }
+        .member-symbol.female { border-color: #f48fb1; border-radius: 50%; color: #f48fb1; }
+        .member-symbol.unknown { border-color: #9b59b6; border-radius: 0; transform: rotate(45deg); width: 42px; height: 42px; margin: 12px auto 8px; color: #9b59b6; }
+        .member-symbol.deceased::after { content: ''; position: absolute; top: 50%; left: -20%; width: 140%; height: 3px; background: #333; transform: rotate(45deg); }
+        .member-name { font-size: 0.9rem; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 4px; }
+        .member-age, .member-occupation, .member-note { font-size: 0.8rem; margin-top: 2px; }
+        .member-age { color: #666; }
+        .member-occupation { color: #2c3e50; }
+        .member-note { color: #e67e22; }
+        .member.selected .member-symbol { box-shadow: 0 0 0 3px #ffd54f; }
+        .member.relation-selected .member-symbol { box-shadow: 0 0 0 3px #8e44ad; }
+        /* 文字方塊樣式 */
+        .text-box { position: absolute; min-width: 100px; max-width: 300px; background: #fff9e6; border: 2px solid #f1c40f; border-radius: 6px; padding: 5px; z-index: 3; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .text-box.selected { border-color: #e67e22; box-shadow: 0 0 0 3px rgba(230,126,34,0.4); }
+        .text-box-drag-handle { height: 18px; background: #f1c40f; border-radius: 3px 3px 0 0; cursor: grab; text-align: center; font-size: 0.7rem; color: #333; line-height: 18px; user-select: none; }
+        .text-box-close { position: absolute; top: -10px; right: -10px; width: 20px; height: 20px; background: #e74c3c; color: white; border-radius: 50%; text-align: center; line-height: 20px; cursor: pointer; font-weight: bold; z-index: 4; }
+        .text-box-content { padding: 8px; min-height: 40px; outline: none; font-size: 0.9rem; word-break: break-word; }
+        .sidebar { width: 260px; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e0e0e0; flex-shrink: 0; }
+        .sidebar h3 { margin-bottom: 15px; }
+        .sidebar label { display: block; margin-bottom: 10px; }
+        .sidebar input[type="text"] { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        .sidebar select { width: 100%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; }
+        .sidebar .delete-btn { width: 100%; padding: 10px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .relation-hint { background: #fef9e7; padding: 5px 12px; border-radius: 20px; border: 1px solid #f1c40f; }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="main-area">
+        <h1>家庭圖繪製工具（基礎版）</h1>
+
+        <!-- 操作說明 -->
+        <details class="instruction-box" open>
+            <summary>📘 操作說明（點擊展開/收合）</summary>
+            <ol>
+                <li><strong>新增成員：</strong>點擊「➕ 男性」、「➕ 女性」或「❓ 不明」按鈕，即可在畫布中央新增一位成員。拖曳成員可移動位置。</li>
+                <li><strong>設定配偶：</strong>點擊「💍 設為配偶」，接著依序點擊畫布上的兩位成員，系統會用<strong>黑色單線</strong>將他們連接。在側邊欄可修改配偶狀態（已婚／離婚／分居）。</li>
+                <li><strong>設定伴侶：</strong>點擊「💑 設為伴侶」，再依序點擊兩位成員，會以<strong>橙色雙線</strong>連接。側邊欄可修改伴侶狀態（同居／分手／離異）。</li>
+                <li><strong>設定子女：</strong>
+                    <ol type="a" style="margin-left:20px;">
+                        <li>點擊「👶 設為子女」。</li>
+                        <li>先點擊<strong>子女成員</strong>。</li>
+                        <li>再點擊<strong>一位或兩位父母</strong>（可點多位，若只有一位父母也沒問題）。</li>
+                        <li>點擊「✅ 完成子女設定」按鈕（或點擊畫布空白處）。</li>
+                    </ol>
+                    子女線會從父母連線的中間（或單親的符號）向下連接到子女。
+                </li>
+                <li><strong>編輯成員：</strong>點擊任一成員，右側會顯示屬性面板，可修改姓名、性別、年齡、職業、備註、已故狀態，以及配偶／伴侶的關係狀態。</li>
+                <li><strong>刪除成員：</strong>先點選成員，再點擊側邊欄的「🗑️ 刪除成員」。</li>
+                <li><strong>文字方塊：</strong>點擊「📝 文字方塊」按鈕可在畫布新增文字方塊。拖曳上方黃色橫條可移動，點擊內容區即可直接輸入文字。點擊右上角「×」或選中後按 Delete 鍵可刪除。<span style="color:#e67e22;">※ 匯出 PNG 時不會顯示拖曳把手與刪除按鈕。</span></li>
+                <li><strong>文字解析自動繪圖：</strong>在上方文字框輸入家庭描述，點擊「解析文字」，系統會嘗試自動解析並繪製家庭圖草圖，之後方便你作出更改與修正。若畫布已有成員，會詢問是否清除後重新繪製。<br>
+                <span style="color:#e67e22;">⚠️ 注意：目前僅支援三代以內、半結構化描述（例如：張三，男，45歲，與李四，女，43歲，結婚，育有一子張小明（男，15歲）、一女張小紅（女，10歲）。）</span></li>
+                <li><strong>匯出與匯入：</strong>使用下方工具列的「匯出 PNG」可將畫布存為圖片；「儲存 JSON」可保存目前所有成員與關係資料；「載入 JSON」可上傳之前儲存的檔案重建家庭圖。</li>
+            </ol>
+        </details>
+
+        <!-- 文字解析區塊 -->
+        <div class="parser-section">
+            <textarea id="family-text-input" placeholder="請輸入家庭描述，例如：張三，男，45歲，與李四，女，43歲，結婚，育有一子張小明（男，15歲）、一女張小紅（女，10歲）。"></textarea>
+            <button class="parse-btn" id="btn-parse">解析文字（測試中）</button>
+            <div class="parse-result" id="parse-result" style="display:none;"></div>
+            <div class="format-note">※ 目前僅支援三代以內、半結構化描述。</div>
+        </div>
+
+        <!-- 工具列 -->
+        <div class="toolbar">
+            <button id="btnAddMale">➕ 男性</button>
+            <button id="btnAddFemale">➕ 女性</button>
+            <button id="btnAddUnknown">❓ 不明</button>
+            <button id="btnSpouse">💍 設為配偶</button>
+            <button id="btnPartner">💑 設為伴侶</button>
+            <button id="btnChild">👶 設為子女</button>
+            <button id="btnFinishChild" class="finish-child-btn">✅ 完成子女設定</button>
+            <button id="btnAddTextBox" class="text-box-btn">📝 文字方塊</button>
+            <button id="btnExportPng" class="export-btn">📷 匯出 PNG</button>
+            <button id="btnSaveJson" class="export-btn">💾 儲存 JSON</button>
+            <button id="btnLoadJson" class="import-btn">📂 載入 JSON</button>
+            <input type="file" id="fileInput" accept="application/json" style="display:none;">
+            <span id="relationHint" class="relation-hint" style="display:none;"></span>
+        </div>
+
+        <!-- 畫布 -->
+        <div id="canvas"><svg class="relation-lines" id="relationSvg"></svg></div>
+    </div>
+
+    <!-- 側邊欄 -->
+    <div class="sidebar">
+        <h3>成員屬性</h3>
+        <div id="hint">👆 點擊成員編輯</div>
+        <div id="edit-panel" style="display:none;">
+            <label>姓名：<input type="text" id="edit-name"></label>
+            <label>性別：<span id="edit-gender"></span></label>
+            <label>年齡：<input type="text" id="edit-age" placeholder="例如 45 或 45歲"></label>
+            <label>職業：<input type="text" id="edit-occupation" placeholder="例如 教師"></label>
+            <label>備註：<input type="text" id="edit-note" placeholder="例如 長期病患"></label>
+            <label><input type="checkbox" id="edit-deceased"> 已故</label>
+            <div id="spouse-status-area" style="display:none;">
+                <label>配偶狀態：</label>
+                <select id="spouse-status-select">
+                    <option value="married">已婚</option>
+                    <option value="divorced">離婚</option>
+                    <option value="separated">分居</option>
+                </select>
+            </div>
+            <div id="partner-status-area" style="display:none;">
+                <label>伴侶狀態：</label>
+                <select id="partner-status-select">
+                    <option value="together">同居/交往中</option>
+                    <option value="separated">分手</option>
+                    <option value="divorced">離異</option>
+                </select>
+            </div>
+            <button class="delete-btn" id="btn-delete">🗑️ 刪除成員</button>
+            <button id="btn-deselect">取消選取</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    // ========== DOM 元素 ==========
+    const canvas = document.getElementById('canvas');
+    const relationSvg = document.getElementById('relationSvg');
+    const btnAddMale = document.getElementById('btnAddMale');
+    const btnAddFemale = document.getElementById('btnAddFemale');
+    const btnAddUnknown = document.getElementById('btnAddUnknown');
+    const btnSpouse = document.getElementById('btnSpouse');
+    const btnPartner = document.getElementById('btnPartner');
+    const btnChild = document.getElementById('btnChild');
+    const btnFinishChild = document.getElementById('btnFinishChild');
+    const btnAddTextBox = document.getElementById('btnAddTextBox');
+    const btnExportPng = document.getElementById('btnExportPng');
+    const btnSaveJson = document.getElementById('btnSaveJson');
+    const btnLoadJson = document.getElementById('btnLoadJson');
+    const fileInput = document.getElementById('fileInput');
+    const relationHint = document.getElementById('relationHint');
+    const sidebarHint = document.getElementById('hint');
+    const editPanel = document.getElementById('edit-panel');
+    const editNameInput = document.getElementById('edit-name');
+    const editGenderSpan = document.getElementById('edit-gender');
+    const editAgeInput = document.getElementById('edit-age');
+    const editOccupationInput = document.getElementById('edit-occupation');
+    const editNoteInput = document.getElementById('edit-note');
+    const editDeceasedCheckbox = document.getElementById('edit-deceased');
+    const spouseStatusArea = document.getElementById('spouse-status-area');
+    const spouseStatusSelect = document.getElementById('spouse-status-select');
+    const partnerStatusArea = document.getElementById('partner-status-area');
+    const partnerStatusSelect = document.getElementById('partner-status-select');
+    const btnDelete = document.getElementById('btn-delete');
+    const btnDeselect = document.getElementById('btn-deselect');
+    const familyTextInput = document.getElementById('family-text-input');
+    const btnParse = document.getElementById('btn-parse');
+    const parseResult = document.getElementById('parse-result');
+
+    // ========== 狀態 ==========
+    let memberIdCounter = 0;
+    const members = new Map(); // id -> { element, gender, name, age, occupation, note, deceased }
+    let selectedMemberId = null;
+    let relationMode = null; // 'spouse' | 'partner' | 'child'
+    let relationSelectedIds = [];
+    let childSelectionState = null;
+    const spousePairs = new Map(); // key -> { id1, id2, status }
+    const partnerPairs = new Map(); // key -> { id1, id2, status }
+    const coParentPairs = new Map(); // key -> { id1, id2 }
+    const childMap = new Map(); // key -> [childId, ...]
+
+    // 文字方塊
+    let textBoxIdCounter = 0;
+    const textBoxes = new Map(); // id -> element
+    let selectedTextBoxId = null;
+
+    // ========== 工具函式 ==========
+    function generateId() { return 'member-' + (++memberIdCounter); }
+    function generateTextBoxId() { return 'textbox-' + (++textBoxIdCounter); }
+    function getMemberCenter(memberId) {
+        const m = members.get(memberId); if (!m) return null;
+        const symbol = m.element.querySelector('.member-symbol');
+        const r = symbol.getBoundingClientRect(); const cr = canvas.getBoundingClientRect();
+        return { x: r.left - cr.left + r.width/2, y: r.top - cr.top + r.height/2 };
+    }
+    function getSpouseKey(id1, id2) { const arr = [id1,id2].sort(); return arr[0]+'|'+arr[1]; }
+    function getPartnerKey(id1, id2) { const arr = [id1,id2].sort(); return arr[0]+'|'+arr[1]; }
+    function getCoParentKey(id1, id2) { const arr = [id1,id2].sort(); return 'coParent-'+arr[0]+'|'+arr[1]; }
+    function getSingleParentKey(parentId) { return 'singleParent-'+parentId; }
+    function getSpousePair(memberId) { for (let [k,p] of spousePairs) if (p.id1===memberId||p.id2===memberId) return {key:k, pair:p}; return null; }
+    function getPartnerPair(memberId) { for (let [k,p] of partnerPairs) if (p.id1===memberId||p.id2===memberId) return {key:k, pair:p}; return null; }
+    function getGenderDisplay(g) { return g==='male'?'男':g==='female'?'女':'不明'; }
+
+    // ========== 文字解析（修正版） ==========
+    function normalizePunctuation(text) { return text.replace(/，/g,',').replace(/。/g,';').replace(/；/g,';').replace(/\./g,';').replace(/\s+/g,' ').trim(); }
+    function parsePersonSegment(segment) {
+        segment = segment.trim().replace(/[;；。.]+$/g,''); if(!segment) return null;
+        const bracketContents = [];
+        let processed = segment.replace(/[（(](.*?)[）)]/g, (m, inner) => { bracketContents.push(inner.trim()); return ' __BRACKET_'+(bracketContents.length-1)+'__ '; });
+        const parts = processed.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+        let name='', gender='unknown', age='未知';
+        if (parts.length >= 2 && !/[男女]|(\d+\s*歲?)|__BRACKET_/.test(parts[0])) {
+            name = parts[0];
+            let rest = parts.slice(1).join(',');
+            rest = rest.replace(/__BRACKET_(\d+)__/g, (m, idx) => '(' + bracketContents[parseInt(idx)] + ')');
+            const g = rest.match(/[男女]性?/);
+            const a = rest.match(/(\d+)\s*歲?/);
+            if (g) gender = g[0].replace('性','')==='男'?'male':'female';
+            if (a) age = a[1]+'歲';
+            return { name, gender, age, spouse:'', children:[] };
+        }
+        let full = segment.replace(/__BRACKET_(\d+)__/g, (m, idx) => '(' + bracketContents[parseInt(idx)] + ')');
+        const ageMatch = full.match(/(\d+)\s*歲?/); if(ageMatch) age = ageMatch[1]+'歲';
+        const genderMatch = full.match(/[男女]性?/); if(genderMatch) gender = genderMatch[0].replace('性','')==='男'?'male':'female';
+        let namePart = full; if(ageMatch) namePart = namePart.replace(ageMatch[0], ''); if(genderMatch) namePart = namePart.replace(genderMatch[0], '');
+        namePart = namePart.replace(/[（(].*?[）)]/g, '').replace(/[,，、\s]+/g, '').trim();
+        name = namePart || '未命名';
+        return { name, gender, age, spouse:'', children:[] };
+    }
+
+    function parseFamilyText(text) {
+        text = normalizePunctuation(text);
+        if(!text) return [{error:'請輸入文字。'}];
+        const marriageKw = ['結婚','已婚','婚配','配偶','夫妻'];
+        let cnt = 0;
+        let marriageKeyword = '';
+        for(let k of marriageKw){
+            let idx=-1, s=0;
+            while((idx=text.indexOf(k, s))!==-1){
+                cnt++;
+                if (cnt === 1) marriageKeyword = k;
+                s = idx + k.length;
+            }
+        }
+        if(cnt===0) return [{error:'未找到婚姻關鍵字。'}];
+        if(cnt>1) return [{error:'偵測到多段婚姻，請分開輸入。'}];
+
+        let mi = text.indexOf(marriageKeyword);
+        const before = text.substring(0, mi).trim();
+        let after = text.substring(mi + marriageKeyword.length).trim();
+
+        let childPart = '';
+        const childKw = ['育有','子女','孩子','兒子','女兒','生育'];
+        let cs = -1;
+        let childKeyword = '';
+        for(let k of childKw){
+            const idx = after.indexOf(k);
+            if(idx !== -1){ cs = idx; childKeyword = k; break; }
+        }
+        if(cs !== -1){
+            childPart = after.substring(cs + childKeyword.length).trim();
+            childPart = childPart.replace(/[,，;；\s]*(離婚|分居|離異|分手).*$/, '').trim();
+            childPart = childPart.replace(/[;；。.]+$/g, '').trim();
+        }
+
+        let spouseStatus = 'married';
+        const st = after.match(/(離婚|分居|離異|分手)/);
+        if(st){
+            const w = st[1];
+            if(w === '離婚' || w === '離異') spouseStatus = 'divorced';
+            else if(w === '分居' || w === '分手') spouseStatus = 'separated';
+        }
+
+        const seps = ['與','和','跟','及'];
+        let si = -1, sc = '';
+        for(let s of seps){
+            const idx = before.indexOf(s);
+            if(idx !== -1){ si = idx; sc = s; break; }
+        }
+        if(si === -1) return [{error:'無法分離配偶雙方。'}];
+
+        const p1s = before.substring(0, si).trim();
+        const p2s = before.substring(si + sc.length).trim();
+        const p1 = parsePersonSegment(p1s);
+        const p2 = parsePersonSegment(p2s);
+        if(!p1 || !p2) return [{error:'人物解析失敗。'}];
+
+        p1.spouse = p2.name;
+        p2.spouse = p1.name;
+        p1.spouseStatus = spouseStatus;
+        p2.spouseStatus = spouseStatus;
+
+        const result = [p1, p2];
+
+        if(childPart){
+            const childSegs = childPart.split(/[、和與及]/).map(s => s.trim()).filter(Boolean);
+            for(let seg of childSegs){
+                seg = seg.replace(/[;；。.]+$/g, '').trim();
+                if(!seg) continue;
+                let cleaned = seg;
+                const prefixMatch = cleaned.match(/^([一二三四五六七八九十]+[子女男]|[長次幼么][子女男])/);
+                if(prefixMatch){
+                    cleaned = cleaned.substring(prefixMatch[0].length).trim();
+                }
+                cleaned = cleaned.replace(/^[長次幼么]/, '').trim();
+                if(!cleaned) continue;
+                const child = parsePersonSegment(cleaned);
+                if(child){
+                    result.push(child);
+                    p1.children.push(child.name);
+                    p2.children.push(child.name);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    function displayParseResult(data){
+        parseResult.style.display='block';
+        if(data.length===1 && data[0].error){ parseResult.innerHTML=`<span style="color:#e74c3c">${data[0].error}</span>`; return; }
+        let html='<ul>';
+        data.forEach(p=>{ let line=`${p.name} - ${p.gender==='male'?'男':p.gender==='female'?'女':'不明'} - ${p.age}`; if(p.spouse){ line+=` - 配偶：${p.spouse}`; if(p.spouseStatus==='divorced') line+='（離婚）'; else if(p.spouseStatus==='separated') line+='（分居）'; } if(p.children&&p.children.length) line+=`；子女：${p.children.join('、')}`; html+=`<li>${line}</li>`; });
+        html+='</ul>'; parseResult.innerHTML=html;
+    }
+
+    // ========== 建立成員 ==========
+    function createMember(gender, options={}) {
+        let id;
+        if (options.id) {
+            id = options.id;
+            const num = parseInt(id.replace('member-',''));
+            if (!isNaN(num)) memberIdCounter = Math.max(memberIdCounter, num);
+        } else {
+            id = generateId();
+        }
+        const div = document.createElement('div');
+        div.className = 'member';
+        div.id = id;
+        div.style.left = options.left || '0px';
+        div.style.top = options.top || '0px';
+
+        const sym = document.createElement('div');
+        sym.className = 'member-symbol ' + (gender==='male'?'male':gender==='female'?'female':'unknown');
+        const st = document.createElement('span');
+        st.textContent = gender==='male'?'♂':gender==='female'?'♀':'?';
+        sym.appendChild(st);
+
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'member-name';
+        nameDiv.textContent = options.name || '未命名';
+
+        const ageDiv = document.createElement('div');
+        ageDiv.className = 'member-age';
+        ageDiv.textContent = options.age || '';
+
+        const occupationDiv = document.createElement('div');
+        occupationDiv.className = 'member-occupation';
+        occupationDiv.textContent = options.occupation || '';
+
+        const noteDiv = document.createElement('div');
+        noteDiv.className = 'member-note';
+        noteDiv.textContent = options.note || '';
+
+        div.appendChild(sym);
+        div.appendChild(nameDiv);
+        div.appendChild(ageDiv);
+        div.appendChild(occupationDiv);
+        div.appendChild(noteDiv);
+
+        if (options.deceased) sym.classList.add('deceased');
+
+        members.set(id, {
+            element: div,
+            gender: gender,
+            name: options.name || '未命名',
+            age: options.age || '',
+            occupation: options.occupation || '',
+            note: options.note || '',
+            deceased: options.deceased || false
+        });
+
+        canvas.appendChild(div);
+        makeDraggable(div);
+        drawAllRelations();
+        return id;
+    }
+
+    function positionMemberAtCenter(div){
+        requestAnimationFrame(()=>{
+            const cr = canvas.getBoundingClientRect();
+            const w = div.offsetWidth, h = div.offsetHeight;
+            const cx = (cr.width - w) / 2, cy = (cr.height - h) / 2;
+            const ox = (Math.random() - 0.5) * 40, oy = (Math.random() - 0.5) * 40;
+            div.style.left = Math.max(0, Math.min(cx + ox, cr.width - w)) + 'px';
+            div.style.top = Math.max(0, Math.min(cy + oy, cr.height - h)) + 'px';
+            drawAllRelations();
+        });
+    }
+
+    function setMemberInfo(id, name, age, occupation='', note='') {
+        const m = members.get(id);
+        if (!m) return;
+        m.name = name;
+        m.age = age || '';
+        m.occupation = occupation;
+        m.note = note;
+        const nameEl = m.element.querySelector('.member-name');
+        const ageEl = m.element.querySelector('.member-age');
+        const occEl = m.element.querySelector('.member-occupation');
+        const noteEl = m.element.querySelector('.member-note');
+        if (nameEl) nameEl.textContent = name;
+        if (ageEl) ageEl.textContent = age || '';
+        if (occEl) occEl.textContent = occupation || '';
+        if (noteEl) noteEl.textContent = note || '';
+    }
+
+    // ========== 拖曳與點擊（成員） ==========
+    function makeDraggable(el){
+        let dragging=false, offX, offY, startX, startY;
+        const TH = 6;
+        el.addEventListener('mousedown', e => {
+            e.preventDefault();
+            dragging = true;
+            el.classList.add('dragging');
+            const r = el.getBoundingClientRect();
+            offX = e.clientX - r.left;
+            offY = e.clientY - r.top;
+            startX = e.clientX;
+            startY = e.clientY;
+            document.addEventListener('mousemove', mm);
+            document.addEventListener('mouseup', mu);
+        });
+        function mm(e){ if(!dragging) return; moveTo(e.clientX, e.clientY); }
+        function moveTo(cx, cy){
+            const cr = canvas.getBoundingClientRect();
+            let x = cx - cr.left - offX;
+            let y = cy - cr.top - offY;
+            const mr = el.getBoundingClientRect();
+            x = Math.max(0, Math.min(x, cr.width - mr.width));
+            y = Math.max(0, Math.min(y, cr.height - mr.height));
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            drawAllRelations();
+        }
+        function mu(e){
+            dragging = false;
+            el.classList.remove('dragging');
+            document.removeEventListener('mousemove', mm);
+            document.removeEventListener('mouseup', mu);
+            const dx = e.clientX - startX, dy = e.clientY - startY;
+            if (Math.sqrt(dx*dx + dy*dy) < TH) handleClick(el.id);
+        }
+        function handleClick(id){
+            if (relationMode) handleRelationClick(id);
+            else selectMember(id);
+        }
+    }
+
+    // ========== 選取與編輯（成員） ==========
+    function selectMember(id){
+        document.querySelectorAll('.member.relation-selected').forEach(e => e.classList.remove('relation-selected'));
+        if (selectedMemberId) {
+            const old = members.get(selectedMemberId);
+            if (old) old.element.classList.remove('selected');
+        }
+        selectedMemberId = id;
+        if (id) {
+            const m = members.get(id);
+            m.element.classList.add('selected');
+            showEditPanel(m);
+        } else {
+            hideEditPanel();
+        }
+        if (selectedTextBoxId) {
+            textBoxes.get(selectedTextBoxId)?.classList.remove('selected');
+            selectedTextBoxId = null;
+        }
+    }
+    function deselectMember(){
+        if (selectedMemberId) {
+            const old = members.get(selectedMemberId);
+            if (old) old.element.classList.remove('selected');
+            selectedMemberId = null;
+            hideEditPanel();
+        }
+    }
+    function showEditPanel(m){
+        sidebarHint.style.display = 'none';
+        editPanel.style.display = 'block';
+        editNameInput.value = m.name;
+        editGenderSpan.textContent = getGenderDisplay(m.gender);
+        editAgeInput.value = m.age || '';
+        editOccupationInput.value = m.occupation || '';
+        editNoteInput.value = m.note || '';
+        editDeceasedCheckbox.checked = m.deceased;
+
+        const spouseInfo = getSpousePair(selectedMemberId);
+        if (spouseInfo) {
+            spouseStatusArea.style.display = 'block';
+            spouseStatusSelect.value = spouseInfo.pair.status;
+        } else {
+            spouseStatusArea.style.display = 'none';
+        }
+
+        const partnerInfo = getPartnerPair(selectedMemberId);
+        if (partnerInfo) {
+            partnerStatusArea.style.display = 'block';
+            partnerStatusSelect.value = partnerInfo.pair.status;
+        } else {
+            partnerStatusArea.style.display = 'none';
+        }
+
+        editNameInput.oninput = () => {
+            m.name = editNameInput.value.trim() || '未命名';
+            m.element.querySelector('.member-name').textContent = m.name;
+        };
+        editAgeInput.oninput = () => {
+            m.age = editAgeInput.value.trim();
+            m.element.querySelector('.member-age').textContent = m.age;
+        };
+        editOccupationInput.oninput = () => {
+            m.occupation = editOccupationInput.value.trim();
+            m.element.querySelector('.member-occupation').textContent = m.occupation;
+        };
+        editNoteInput.oninput = () => {
+            m.note = editNoteInput.value.trim();
+            m.element.querySelector('.member-note').textContent = m.note;
+        };
+        editDeceasedCheckbox.onchange = () => {
+            m.deceased = editDeceasedCheckbox.checked;
+            const sym = m.element.querySelector('.member-symbol');
+            if (m.deceased) sym.classList.add('deceased');
+            else sym.classList.remove('deceased');
+        };
+        spouseStatusSelect.onchange = () => {
+            if (spouseInfo) {
+                spouseInfo.pair.status = spouseStatusSelect.value;
+                drawAllRelations();
+            }
+        };
+        partnerStatusSelect.onchange = () => {
+            if (partnerInfo) {
+                partnerInfo.pair.status = partnerStatusSelect.value;
+                drawAllRelations();
+            }
+        };
+    }
+    function hideEditPanel(){
+        sidebarHint.style.display = 'block';
+        editPanel.style.display = 'none';
+        editNameInput.oninput = null;
+        editAgeInput.oninput = null;
+        editOccupationInput.oninput = null;
+        editNoteInput.oninput = null;
+        editDeceasedCheckbox.onchange = null;
+        spouseStatusSelect.onchange = null;
+        partnerStatusSelect.onchange = null;
+    }
+
+    // ========== 刪除成員 ==========
+    function deleteSelectedMember(){
+        if (!selectedMemberId) return;
+        const mid = selectedMemberId;
+        const spouseInfo = getSpousePair(mid);
+        if (spouseInfo) {
+            spousePairs.delete(spouseInfo.key);
+            childMap.delete(spouseInfo.key);
+        }
+        const partnerInfo = getPartnerPair(mid);
+        if (partnerInfo) {
+            partnerPairs.delete(partnerInfo.key);
+            childMap.delete(partnerInfo.key);
+        }
+        for (let [key, pair] of coParentPairs) {
+            if (pair.id1 === mid || pair.id2 === mid) {
+                coParentPairs.delete(key);
+                childMap.delete(key);
+            }
+        }
+        for (let [key, children] of childMap) {
+            const idx = children.indexOf(mid);
+            if (idx !== -1) {
+                children.splice(idx, 1);
+                if (!children.length) childMap.delete(key);
+            }
+        }
+        members.get(mid).element.remove();
+        members.delete(mid);
+        selectedMemberId = null;
+        hideEditPanel();
+        drawAllRelations();
+    }
+
+    // ========== 文字方塊功能 ==========
+    function createTextBox() {
+        const id = generateTextBoxId();
+        const div = document.createElement('div');
+        div.className = 'text-box';
+        div.id = id;
+        div.style.left = '100px';
+        div.style.top = '100px';
+
+        const handle = document.createElement('div');
+        handle.className = 'text-box-drag-handle';
+        handle.textContent = '≡ 拖曳';
+        handle.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            startDragTextBox(e, div);
+        });
+        div.appendChild(handle);
+
+        const closeBtn = document.createElement('span');
+        closeBtn.className = 'text-box-close';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            deleteTextBox(id);
+        });
+        div.appendChild(closeBtn);
+
+        const content = document.createElement('div');
+        content.className = 'text-box-content';
+        content.contentEditable = 'true';
+        content.textContent = '雙擊編輯文字';
+        content.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+            selectTextBox(id);
+        });
+        div.appendChild(content);
+
+        canvas.appendChild(div);
+        textBoxes.set(id, div);
+        selectTextBox(id);
+        return id;
+    }
+
+    function startDragTextBox(e, el) {
+        const cr = canvas.getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        const offX = e.clientX - rect.left;
+        const offY = e.clientY - rect.top;
+
+        function onMove(ev) {
+            let x = ev.clientX - cr.left - offX;
+            let y = ev.clientY - cr.top - offY;
+            x = Math.max(0, Math.min(x, cr.width - rect.width));
+            y = Math.max(0, Math.min(y, cr.height - rect.height));
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+        }
+        function onUp() {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    }
+
+    function selectTextBox(id) {
+        if (selectedTextBoxId) {
+            textBoxes.get(selectedTextBoxId)?.classList.remove('selected');
+        }
+        selectedTextBoxId = id;
+        textBoxes.get(id)?.classList.add('selected');
+        if (selectedMemberId) {
+            members.get(selectedMemberId)?.element.classList.remove('selected');
+            selectedMemberId = null;
+            hideEditPanel();
+        }
+    }
+
+    function deleteTextBox(id) {
+        const el = textBoxes.get(id);
+        if (el) {
+            el.remove();
+            textBoxes.delete(id);
+            if (selectedTextBoxId === id) selectedTextBoxId = null;
+        }
+    }
+
+    // ========== 關係模式 ==========
+    function setRelationMode(mode){
+        exitRelationMode();
+        relationMode = mode;
+        btnSpouse.classList.remove('active-mode');
+        btnPartner.classList.remove('active-mode');
+        btnChild.classList.remove('active-mode');
+        btnFinishChild.style.display = 'none';
+
+        if (mode === 'spouse') {
+            btnSpouse.classList.add('active-mode');
+            relationHint.textContent = '請點擊第一個成員';
+        } else if (mode === 'partner') {
+            btnPartner.classList.add('active-mode');
+            relationHint.textContent = '請點擊第一個成員';
+        } else if (mode === 'child') {
+            btnChild.classList.add('active-mode');
+            relationHint.textContent = '請點擊子女成員';
+            childSelectionState = { childId: null, parentIds: [] };
+            btnFinishChild.style.display = 'inline-block';
+        }
+        relationHint.style.display = 'inline-block';
+        deselectMember();
+        if (selectedTextBoxId) {
+            textBoxes.get(selectedTextBoxId)?.classList.remove('selected');
+            selectedTextBoxId = null;
+        }
+    }
+    function exitRelationMode(){
+        btnSpouse.classList.remove('active-mode');
+        btnPartner.classList.remove('active-mode');
+        btnChild.classList.remove('active-mode');
+        btnFinishChild.style.display = 'none';
+        relationHint.style.display = 'none';
+        relationSelectedIds = [];
+        document.querySelectorAll('.member.relation-selected').forEach(e => e.classList.remove('relation-selected'));
+        relationMode = null;
+        childSelectionState = null;
+    }
+
+    // ========== 關係點擊 ==========
+    function handleRelationClick(memberId){
+        if (!relationMode) return;
+        const el = members.get(memberId)?.element;
+        if (!el) return;
+        if (relationSelectedIds.includes(memberId)) return;
+        relationSelectedIds.push(memberId);
+        el.classList.add('relation-selected');
+
+        if (relationMode === 'spouse' || relationMode === 'partner') {
+            if (relationSelectedIds.length === 1) {
+                relationHint.textContent = '請點擊第二個成員';
+            } else if (relationSelectedIds.length === 2) {
+                const [id1, id2] = relationSelectedIds;
+                if (relationMode === 'spouse') {
+                    const key = getSpouseKey(id1, id2);
+                    if (!spousePairs.has(key)) spousePairs.set(key, { id1, id2, status: 'married' });
+                } else if (relationMode === 'partner') {
+                    const key = getPartnerKey(id1, id2);
+                    if (!partnerPairs.has(key)) partnerPairs.set(key, { id1, id2, status: 'together' });
+                }
+                exitRelationMode();
+                drawAllRelations();
+            }
+            return;
+        }
+
+        if (relationMode === 'child') {
+            if (!childSelectionState) childSelectionState = { childId: null, parentIds: [] };
+            if (childSelectionState.childId === null) {
+                childSelectionState.childId = memberId;
+                relationHint.textContent = '已選子女，請點擊父母（可多位，完成後點擊下方按鈕或空白處）';
+            } else {
+                if (!childSelectionState.parentIds.includes(memberId)) {
+                    childSelectionState.parentIds.push(memberId);
+                }
+                relationHint.textContent = '已選子女，可繼續點擊父母，或點擊「完成子女設定」';
+            }
+        }
+    }
+
+    // ========== 畫布空白處點擊 ==========
+    canvas.addEventListener('click', function(e){
+        if (e.target === canvas) {
+            if (relationMode === 'child' && childSelectionState && childSelectionState.childId) {
+                finalizeChildRelation();
+            } else if (relationMode === 'spouse' || relationMode === 'partner') {
+                relationSelectedIds = [];
+                document.querySelectorAll('.member.relation-selected').forEach(el => el.classList.remove('relation-selected'));
+                relationHint.textContent = '請點擊第一個成員';
+            } else {
+                deselectMember();
+                if (selectedTextBoxId) {
+                    textBoxes.get(selectedTextBoxId)?.classList.remove('selected');
+                    selectedTextBoxId = null;
+                }
+            }
+        }
+    });
+
+    // ========== 完成子女設定按鈕 ==========
+    btnFinishChild.addEventListener('click', finalizeChildRelation);
+
+    function finalizeChildRelation(){
+        if (!childSelectionState || !childSelectionState.childId) return;
+        const childId = childSelectionState.childId;
+        const parentIds = childSelectionState.parentIds;
+        if (parentIds.length === 0) {
+            alert('請至少選擇一位父母。');
+            return;
+        }
+        let key;
+        if (parentIds.length === 1) {
+            key = getSingleParentKey(parentIds[0]);
+        } else if (parentIds.length === 2) {
+            const [a, b] = parentIds;
+            const spouse = getSpousePair(a);
+            if (spouse && (spouse.pair.id1 === b || spouse.pair.id2 === b)) {
+                key = spouse.key;
+            } else {
+                const partner = getPartnerPair(a);
+                if (partner && (partner.pair.id1 === b || partner.pair.id2 === b)) {
+                    key = partner.key;
+                } else {
+                    key = getCoParentKey(a, b);
+                    if (!coParentPairs.has(key)) coParentPairs.set(key, { id1: a, id2: b });
+                }
+            }
+        } else {
+            alert('父母數量過多，請重新選擇。');
+            return;
+        }
+        if (!childMap.has(key)) childMap.set(key, []);
+        const children = childMap.get(key);
+        if (!children.includes(childId)) children.push(childId);
+        document.querySelectorAll('.member.relation-selected').forEach(el => el.classList.remove('relation-selected'));
+        childSelectionState = null;
+        exitRelationMode();
+        drawAllRelations();
+        relationHint.style.display = 'inline-block';
+        relationHint.textContent = '子女關係已建立';
+        setTimeout(() => { relationHint.style.display = 'none'; }, 2000);
+    }
+
+    // ========== 繪製關係線 ==========
+    function drawAllRelations(){
+        while (relationSvg.firstChild) relationSvg.removeChild(relationSvg.firstChild);
+        // 配偶線（單線）
+        for (let [k, pair] of spousePairs) {
+            const p1 = getMemberCenter(pair.id1), p2 = getMemberCenter(pair.id2);
+            if (!p1 || !p2) continue;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+            line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+            line.setAttribute('stroke', '#333'); line.setAttribute('stroke-width', '2');
+            if (pair.status === 'divorced') {
+                relationSvg.appendChild(line);
+                const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+                const s1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                s1.setAttribute('x1', mx - 6); s1.setAttribute('y1', my - 6);
+                s1.setAttribute('x2', mx + 6); s1.setAttribute('y2', my + 6);
+                s1.setAttribute('stroke', '#333'); s1.setAttribute('stroke-width', '2');
+                const s2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                s2.setAttribute('x1', mx - 6); s2.setAttribute('y1', my + 6);
+                s2.setAttribute('x2', mx + 6); s2.setAttribute('y2', my - 6);
+                s2.setAttribute('stroke', '#333'); s2.setAttribute('stroke-width', '2');
+                relationSvg.appendChild(s1); relationSvg.appendChild(s2);
+            } else if (pair.status === 'separated') {
+                line.setAttribute('stroke-dasharray', '5,5');
+                relationSvg.appendChild(line);
+            } else {
+                relationSvg.appendChild(line);
+            }
+        }
+        // 伴侶線（雙線）
+        for (let [k, pair] of partnerPairs) {
+            const p1 = getMemberCenter(pair.id1), p2 = getMemberCenter(pair.id2);
+            if (!p1 || !p2) continue;
+            const dx = p2.x - p1.x, dy = p2.y - p1.y;
+            const len = Math.sqrt(dx*dx + dy*dy) || 1;
+            const nx = -dy / len * 4, ny = dx / len * 4;
+            const l1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            l1.setAttribute('x1', p1.x + nx); l1.setAttribute('y1', p1.y + ny);
+            l1.setAttribute('x2', p2.x + nx); l1.setAttribute('y2', p2.y + ny);
+            l1.setAttribute('stroke', '#e67e22'); l1.setAttribute('stroke-width', '2');
+            const l2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            l2.setAttribute('x1', p1.x - nx); l2.setAttribute('y1', p1.y - ny);
+            l2.setAttribute('x2', p2.x - nx); l2.setAttribute('y2', p2.y - ny);
+            l2.setAttribute('stroke', '#e67e22'); l2.setAttribute('stroke-width', '2');
+            relationSvg.appendChild(l1); relationSvg.appendChild(l2);
+            if (pair.status === 'separated') {
+                const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+                const s = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                s.setAttribute('x1', mx - 8); s.setAttribute('y1', my - 8);
+                s.setAttribute('x2', mx + 8); s.setAttribute('y2', my + 8);
+                s.setAttribute('stroke', '#e67e22'); s.setAttribute('stroke-width', '2');
+                relationSvg.appendChild(s);
+            } else if (pair.status === 'divorced') {
+                const mx = (p1.x + p2.x) / 2, my = (p1.y + p2.y) / 2;
+                const s1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                s1.setAttribute('x1', mx - 6); s1.setAttribute('y1', my - 6);
+                s1.setAttribute('x2', mx + 6); s1.setAttribute('y2', my + 6);
+                s1.setAttribute('stroke', '#e67e22'); s1.setAttribute('stroke-width', '2');
+                const s2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                s2.setAttribute('x1', mx - 6); s2.setAttribute('y1', my + 6);
+                s2.setAttribute('x2', mx + 6); s2.setAttribute('y2', my - 6);
+                s2.setAttribute('stroke', '#e67e22'); s2.setAttribute('stroke-width', '2');
+                relationSvg.appendChild(s1); relationSvg.appendChild(s2);
+            }
+        }
+        // 子女線
+        for (let [parentKey, children] of childMap) {
+            let parent1Id, parent2Id;
+            if (spousePairs.has(parentKey)) {
+                const p = spousePairs.get(parentKey);
+                parent1Id = p.id1; parent2Id = p.id2;
+            } else if (partnerPairs.has(parentKey)) {
+                const p = partnerPairs.get(parentKey);
+                parent1Id = p.id1; parent2Id = p.id2;
+            } else if (coParentPairs.has(parentKey)) {
+                const p = coParentPairs.get(parentKey);
+                parent1Id = p.id1; parent2Id = p.id2;
+            } else if (parentKey.startsWith('singleParent-')) {
+                parent1Id = parentKey.replace('singleParent-', '');
+                parent2Id = parent1Id;
+            }
+            if (!parent1Id || !parent2Id) continue;
+            const p1 = getMemberCenter(parent1Id);
+            if (!p1) continue;
+            const p2 = parent1Id === parent2Id ? p1 : getMemberCenter(parent2Id);
+            if (!p2) continue;
+            const midX = (p1.x + p2.x) / 2, midY = (p1.y + p2.y) / 2;
+            children.forEach(childId => {
+                const cp = getMemberCenter(childId);
+                if (!cp) return;
+                const childEl = members.get(childId).element.querySelector('.member-symbol');
+                const cr = childEl.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+                const childTopX = cr.left - canvasRect.left + cr.width / 2;
+                const childTopY = cr.top - canvasRect.top;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                let d;
+                if (parent1Id === parent2Id) {
+                    d = `M ${midX} ${midY} L ${midX} ${childTopY}`;
+                } else {
+                    const bendY = midY + 40;
+                    d = `M ${midX} ${midY} L ${midX} ${bendY} L ${childTopX} ${bendY} L ${childTopX} ${childTopY}`;
+                }
+                path.setAttribute('d', d);
+                path.setAttribute('stroke', '#555');
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('fill', 'none');
+                relationSvg.appendChild(path);
+            });
+        }
+    }
+
+    // ========== 清空畫布 ==========
+    function clearCanvas() {
+        document.querySelectorAll('.member').forEach(el => el.remove());
+        document.querySelectorAll('.text-box').forEach(el => el.remove());
+        members.clear();
+        textBoxes.clear();
+        spousePairs.clear();
+        partnerPairs.clear();
+        coParentPairs.clear();
+        childMap.clear();
+        selectedMemberId = null;
+        selectedTextBoxId = null;
+        hideEditPanel();
+        drawAllRelations();
+    }
+
+    // ========== 自動繪圖 ==========
+    function autoDrawFromParsed(parsedData) {
+        if (parsedData.length === 0 || parsedData[0].error) return;
+
+        if (members.size > 0 || textBoxes.size > 0) {
+            if (!confirm('畫布上已有成員或文字方塊，是否清除並重新繪製？')) return;
+            clearCanvas();
+        }
+
+        const nameToId = new Map();
+        parsedData.forEach(person => {
+            if (!person.name || nameToId.has(person.name)) return;
+            const gender = person.gender === 'male' ? 'male' : person.gender === 'female' ? 'female' : 'unknown';
+            const id = createMember(gender);
+            setMemberInfo(id, person.name, person.age);
+            nameToId.set(person.name, id);
+        });
+
+        parsedData.forEach(person => {
+            if (!person.spouse) return;
+            const id1 = nameToId.get(person.name);
+            const id2 = nameToId.get(person.spouse);
+            if (id1 && id2 && id1 !== id2) {
+                const key = getSpouseKey(id1, id2);
+                if (!spousePairs.has(key)) {
+                    spousePairs.set(key, { id1, id2, status: person.spouseStatus || 'married' });
+                } else {
+                    const pair = spousePairs.get(key);
+                    if (person.spouseStatus && pair.status === 'married') {
+                        pair.status = person.spouseStatus;
+                    }
+                }
+            }
+        });
+
+        const handledChildren = new Set();
+        parsedData.forEach(person => {
+            if (person.children && person.children.length > 0) {
+                const parentId = nameToId.get(person.name);
+                if (!parentId) return;
+                person.children.forEach(childName => {
+                    const childId = nameToId.get(childName);
+                    if (!childId) return;
+                    if (handledChildren.has(childId)) return;
+
+                    let spouseId = null;
+                    const spousePair = getSpousePair(parentId);
+                    if (spousePair) {
+                        spouseId = spousePair.pair.id1 === parentId ? spousePair.pair.id2 : spousePair.pair.id1;
+                    } else {
+                        const partnerPair = getPartnerPair(parentId);
+                        if (partnerPair) {
+                            spouseId = partnerPair.pair.id1 === parentId ? partnerPair.pair.id2 : partnerPair.pair.id1;
+                        }
+                    }
+
+                    if (spouseId) {
+                        const spouseKey = getSpousePair(parentId) ? getSpousePair(parentId).key : getPartnerPair(parentId) ? getPartnerPair(parentId).key : getCoParentKey(parentId, spouseId);
+                        if (!childMap.has(spouseKey)) childMap.set(spouseKey, []);
+                        if (!childMap.get(spouseKey).includes(childId)) childMap.get(spouseKey).push(childId);
+                    } else {
+                        const singleKey = getSingleParentKey(parentId);
+                        if (!childMap.has(singleKey)) childMap.set(singleKey, []);
+                        if (!childMap.get(singleKey).includes(childId)) childMap.get(singleKey).push(childId);
+                    }
+                    handledChildren.add(childId);
+                });
+            }
+        });
+
+        autoLayout();
+        drawAllRelations();
+    }
+
+    function autoLayout() {
+        const depthMap = new Map();
+        const queue = [];
+        members.forEach((m, id) => {
+            let isChild = false;
+            for (let children of childMap.values()) {
+                if (children.includes(id)) { isChild = true; break; }
+            }
+            if (!isChild) {
+                depthMap.set(id, 0);
+                queue.push(id);
+            }
+        });
+        while (queue.length) {
+            const id = queue.shift();
+            const depth = depthMap.get(id);
+            for (let [parentKey, children] of childMap) {
+                let parent1Id, parent2Id;
+                if (spousePairs.has(parentKey)) {
+                    const p = spousePairs.get(parentKey);
+                    parent1Id = p.id1; parent2Id = p.id2;
+                } else if (partnerPairs.has(parentKey)) {
+                    const p = partnerPairs.get(parentKey);
+                    parent1Id = p.id1; parent2Id = p.id2;
+                } else if (coParentPairs.has(parentKey)) {
+                    const p = coParentPairs.get(parentKey);
+                    parent1Id = p.id1; parent2Id = p.id2;
+                } else if (parentKey.startsWith('singleParent-')) {
+                    parent1Id = parentKey.replace('singleParent-', '');
+                    parent2Id = parent1Id;
+                }
+                if (parent1Id === id || parent2Id === id) {
+                    children.forEach(childId => {
+                        if (!depthMap.has(childId)) {
+                            depthMap.set(childId, depth + 1);
+                            queue.push(childId);
+                        }
+                    });
+                }
+            }
+        }
+        members.forEach((m, id) => {
+            if (!depthMap.has(id)) depthMap.set(id, 0);
+        });
+
+        const groups = new Map();
+        depthMap.forEach((depth, id) => {
+            if (!groups.has(depth)) groups.set(depth, []);
+            groups.get(depth).push(id);
+        });
+
+        const canvasRect = canvas.getBoundingClientRect();
+        const startX = 100;
+        const startY = 100;
+        const xGap = 120;
+        const yGap = 180;
+
+        groups.forEach((ids, depth) => {
+            const y = startY + depth * yGap;
+            let x = startX;
+            ids.forEach(id => {
+                const member = members.get(id);
+                if (!member) return;
+                const w = member.element.offsetWidth;
+                member.element.style.left = Math.max(0, Math.min(x, canvasRect.width - w)) + 'px';
+                member.element.style.top = y + 'px';
+                x += xGap;
+            });
+        });
+    }
+
+    // ========== 匯出 PNG ==========
+    async function exportPng() {
+        deselectMember();
+        if (selectedTextBoxId) {
+            textBoxes.get(selectedTextBoxId)?.classList.remove('selected');
+            selectedTextBoxId = null;
+        }
+        if (relationMode) exitRelationMode();
+
+        // 隱藏文字方塊的控制項
+        const handles = document.querySelectorAll('.text-box-drag-handle');
+        const closeBtns = document.querySelectorAll('.text-box-close');
+        const originalDisplays = [];
+        handles.forEach(h => {
+            originalDisplays.push({ el: h, display: h.style.display });
+            h.style.display = 'none';
+        });
+        closeBtns.forEach(c => {
+            originalDisplays.push({ el: c, display: c.style.display });
+            c.style.display = 'none';
+        });
+
+        try {
+            const canvasElement = document.getElementById('canvas');
+            const canvasImage = await html2canvas(canvasElement, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+                logging: false
+            });
+            const link = document.createElement('a');
+            link.download = 'family-diagram.png';
+            link.href = canvasImage.toDataURL('image/png');
+            link.click();
+        } catch (err) {
+            console.error('匯出失敗', err);
+        } finally {
+            // 恢復顯示
+            originalDisplays.forEach(item => {
+                item.el.style.display = item.display;
+            });
+        }
+    }
+
+    // ========== 儲存 JSON ==========
+    function saveJson() {
+        const data = {
+            members: Array.from(members.entries()).map(([id, m]) => ({
+                id,
+                gender: m.gender,
+                name: m.name,
+                age: m.age,
+                occupation: m.occupation,
+                note: m.note,
+                deceased: m.deceased,
+                left: m.element.style.left,
+                top: m.element.style.top
+            })),
+            spousePairs: Array.from(spousePairs.entries()).map(([key, pair]) => ({key, ...pair})),
+            partnerPairs: Array.from(partnerPairs.entries()).map(([key, pair]) => ({key, ...pair})),
+            coParentPairs: Array.from(coParentPairs.entries()).map(([key, pair]) => ({key, ...pair})),
+            childMap: Array.from(childMap.entries()).map(([key, children]) => ({key, children})),
+            textBoxes: Array.from(textBoxes.entries()).map(([id, el]) => ({
+                id,
+                left: el.style.left,
+                top: el.style.top,
+                content: el.querySelector('.text-box-content').innerText
+            }))
+        };
+        const json = JSON.stringify(data, null, 2);
+        const blob = new Blob([json], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = 'family-diagram.json';
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    // ========== 載入 JSON ==========
+    function loadJson(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (!data.members || !Array.isArray(data.members)) throw new Error('格式錯誤');
+                clearCanvas();
+                data.members.forEach(m => {
+                    createMember(m.gender, {
+                        id: m.id,
+                        name: m.name,
+                        age: m.age,
+                        occupation: m.occupation,
+                        note: m.note,
+                        deceased: m.deceased,
+                        left: m.left,
+                        top: m.top
+                    });
+                });
+                if (data.spousePairs) {
+                    data.spousePairs.forEach(pair => {
+                        if (members.has(pair.id1) && members.has(pair.id2)) {
+                            spousePairs.set(pair.key, { id1: pair.id1, id2: pair.id2, status: pair.status || 'married' });
+                        }
+                    });
+                }
+                if (data.partnerPairs) {
+                    data.partnerPairs.forEach(pair => {
+                        if (members.has(pair.id1) && members.has(pair.id2)) {
+                            partnerPairs.set(pair.key, { id1: pair.id1, id2: pair.id2, status: pair.status || 'together' });
+                        }
+                    });
+                }
+                if (data.coParentPairs) {
+                    data.coParentPairs.forEach(pair => {
+                        if (members.has(pair.id1) && members.has(pair.id2)) {
+                            coParentPairs.set(pair.key, { id1: pair.id1, id2: pair.id2 });
+                        }
+                    });
+                }
+                if (data.childMap) {
+                    data.childMap.forEach(rel => {
+                        if (rel.children && Array.isArray(rel.children)) {
+                            childMap.set(rel.key, rel.children);
+                        }
+                    });
+                }
+                if (data.textBoxes && Array.isArray(data.textBoxes)) {
+                    data.textBoxes.forEach(tb => {
+                        const id = tb.id || generateTextBoxId();
+                        const div = document.createElement('div');
+                        div.className = 'text-box';
+                        div.id = id;
+                        div.style.left = tb.left || '100px';
+                        div.style.top = tb.top || '100px';
+                        const handle = document.createElement('div');
+                        handle.className = 'text-box-drag-handle';
+                        handle.textContent = '≡ 拖曳';
+                        handle.addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            startDragTextBox(e, div);
+                        });
+                        const closeBtn = document.createElement('span');
+                        closeBtn.className = 'text-box-close';
+                        closeBtn.textContent = '×';
+                        closeBtn.addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            deleteTextBox(id);
+                        });
+                        const content = document.createElement('div');
+                        content.className = 'text-box-content';
+                        content.contentEditable = 'true';
+                        content.textContent = tb.content || '';
+                        content.addEventListener('mousedown', (e) => {
+                            e.stopPropagation();
+                            selectTextBox(id);
+                        });
+                        div.appendChild(handle);
+                        div.appendChild(closeBtn);
+                        div.appendChild(content);
+                        canvas.appendChild(div);
+                        textBoxes.set(id, div);
+                    });
+                }
+                drawAllRelations();
+                alert('載入成功！');
+            } catch (err) {
+                alert('JSON 檔案格式錯誤：' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // ========== 事件綁定 ==========
+    btnAddMale.addEventListener('click', () => { if (relationMode) exitRelationMode(); const id = createMember('male'); positionMemberAtCenter(members.get(id).element); });
+    btnAddFemale.addEventListener('click', () => { if (relationMode) exitRelationMode(); const id = createMember('female'); positionMemberAtCenter(members.get(id).element); });
+    btnAddUnknown.addEventListener('click', () => { if (relationMode) exitRelationMode(); const id = createMember('unknown'); positionMemberAtCenter(members.get(id).element); });
+    btnSpouse.addEventListener('click', () => { if (relationMode === 'spouse') exitRelationMode(); else setRelationMode('spouse'); });
+    btnPartner.addEventListener('click', () => { if (relationMode === 'partner') exitRelationMode(); else setRelationMode('partner'); });
+    btnChild.addEventListener('click', () => { if (relationMode === 'child') exitRelationMode(); else setRelationMode('child'); });
+    btnAddTextBox.addEventListener('click', () => { if (relationMode) exitRelationMode(); createTextBox(); });
+    btnDelete.addEventListener('click', deleteSelectedMember);
+    btnDeselect.addEventListener('click', () => { if (relationMode) exitRelationMode(); deselectMember(); });
+    btnParse.addEventListener('click', () => {
+        const text = familyTextInput.value.trim();
+        if (!text) { alert('請輸入家庭描述。'); return; }
+        const parsed = parseFamilyText(text);
+        displayParseResult(parsed);
+        autoDrawFromParsed(parsed);
+    });
+    btnExportPng.addEventListener('click', exportPng);
+    btnSaveJson.addEventListener('click', saveJson);
+    btnLoadJson.addEventListener('click', () => { fileInput.click(); });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) loadJson(e.target.files[0]);
+        fileInput.value = '';
+    });
+
+    // 鍵盤刪除文字方塊
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Delete' && selectedTextBoxId && !relationMode && document.activeElement?.contentEditable !== 'true') {
+            e.preventDefault();
+            deleteTextBox(selectedTextBoxId);
+        }
+    });
+
+    // ========== 初始化 ==========
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            const m = createMember('male');
+            positionMemberAtCenter(members.get(m).element);
+            const f = createMember('female');
+            positionMemberAtCenter(members.get(f).element);
+        }, 100);
+    });
+})();
+</script>
+</body>
+</html>
