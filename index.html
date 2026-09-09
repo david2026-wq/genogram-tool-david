@@ -31,21 +31,15 @@
         .toolbar .emotion-type-btns button { background: #e74c3c; color: white; }
         #canvas { position: relative; width: 100%; height: 600px; background: white; border: 2px solid #ccc; border-radius: 8px; overflow: hidden; }
         #canvas svg.relation-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+        #freehandCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 3; }
+        #freehandCanvas.active { pointer-events: auto; }
         .member { position: absolute; width: 80px; text-align: center; cursor: grab; user-select: none; z-index: 2; }
         .member-symbol { width: 60px; height: 60px; margin: 0 auto 4px; border: 3px solid; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; font-weight: bold; background: white; position: relative; overflow: hidden; }
         .member-symbol.male { border-color: #4a90e2; border-radius: 4px; color: #4a90e2; }
         .member-symbol.female { border-color: #f48fb1; border-radius: 50%; color: #f48fb1; }
         .member-symbol.unknown { border-color: #9b59b6; border-radius: 0; transform: rotate(45deg); width: 42px; height: 42px; margin: 12px auto 8px; color: #9b59b6; }
         .member-symbol.deceased::before,
-        .member-symbol.deceased::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: -20%;
-            width: 140%;
-            height: 3px;
-            background: #333;
-        }
+        .member-symbol.deceased::after { content: ''; position: absolute; top: 50%; left: -20%; width: 140%; height: 3px; background: #333; }
         .member-symbol.deceased::before { transform: rotate(45deg); }
         .member-symbol.deceased::after { transform: rotate(-45deg); }
         .member-name { font-size: 0.9rem; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 4px; }
@@ -71,69 +65,21 @@
         .sidebar .emotional-item button { background: #e74c3c; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
         .relation-hint { background: #fef9e7; padding: 5px 12px; border-radius: 20px; border: 1px solid #f1c40f; }
         .export-scale-select { padding: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; }
-
+        .color-group { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
         /* 顏色切換 */
-        #canvas.all-black .member-symbol,
-        #canvas.all-black .member-symbol.male,
-        #canvas.all-black .member-symbol.female,
-        #canvas.all-black .member-symbol.unknown {
-            border-color: #000 !important;
-            color: #000 !important;
-        }
-        #canvas.all-black .member-name,
-        #canvas.all-black .member-age,
-        #canvas.all-black .member-occupation,
-        #canvas.all-black .member-note {
-            color: #000 !important;
-        }
-        #canvas.all-black svg.relation-lines line,
-        #canvas.all-black svg.relation-lines path {
-            stroke: #000 !important;
-        }
-        #canvas.all-black .text-box {
-            border-color: #000 !important;
-            background: #fff !important;
-        }
-        #canvas.all-black .text-box-content {
-            color: #000 !important;
-        }
-        #canvas.all-black .text-box-drag-handle {
-            background: #000 !important;
-            color: #fff !important;
-        }
-
-        #canvas.all-black-except-emotion .member-symbol,
-        #canvas.all-black-except-emotion .member-symbol.male,
-        #canvas.all-black-except-emotion .member-symbol.female,
-        #canvas.all-black-except-emotion .member-symbol.unknown {
-            border-color: #000 !important;
-            color: #000 !important;
-        }
-        #canvas.all-black-except-emotion .member-name,
-        #canvas.all-black-except-emotion .member-age,
-        #canvas.all-black-except-emotion .member-occupation,
-        #canvas.all-black-except-emotion .member-note {
-            color: #000 !important;
-        }
-        #canvas.all-black-except-emotion svg.relation-lines line:not(.emotional-line),
-        #canvas.all-black-except-emotion svg.relation-lines path:not(.emotional-line) {
-            stroke: #000 !important;
-        }
-        #canvas.all-black-except-emotion svg.relation-lines line.emotional-line,
-        #canvas.all-black-except-emotion svg.relation-lines path.emotional-line {
-            stroke: #e74c3c !important;
-        }
-        #canvas.all-black-except-emotion .text-box {
-            border-color: #000 !important;
-            background: #fff !important;
-        }
-        #canvas.all-black-except-emotion .text-box-content {
-            color: #000 !important;
-        }
-        #canvas.all-black-except-emotion .text-box-drag-handle {
-            background: #000 !important;
-            color: #fff !important;
-        }
+        #canvas.all-black .member-symbol, #canvas.all-black .member-symbol.male, #canvas.all-black .member-symbol.female, #canvas.all-black .member-symbol.unknown { border-color: #000 !important; color: #000 !important; }
+        #canvas.all-black .member-name, #canvas.all-black .member-age, #canvas.all-black .member-occupation, #canvas.all-black .member-note { color: #000 !important; }
+        #canvas.all-black svg.relation-lines line, #canvas.all-black svg.relation-lines path { stroke: #000 !important; }
+        #canvas.all-black .text-box { border-color: #000 !important; background: #fff !important; }
+        #canvas.all-black .text-box-content { color: #000 !important; }
+        #canvas.all-black .text-box-drag-handle { background: #000 !important; color: #fff !important; }
+        #canvas.all-black-except-emotion .member-symbol, #canvas.all-black-except-emotion .member-symbol.male, #canvas.all-black-except-emotion .member-symbol.female, #canvas.all-black-except-emotion .member-symbol.unknown { border-color: #000 !important; color: #000 !important; }
+        #canvas.all-black-except-emotion .member-name, #canvas.all-black-except-emotion .member-age, #canvas.all-black-except-emotion .member-occupation, #canvas.all-black-except-emotion .member-note { color: #000 !important; }
+        #canvas.all-black-except-emotion svg.relation-lines line:not(.emotional-line), #canvas.all-black-except-emotion svg.relation-lines path:not(.emotional-line) { stroke: #000 !important; }
+        #canvas.all-black-except-emotion svg.relation-lines line.emotional-line, #canvas.all-black-except-emotion svg.relation-lines path.emotional-line { stroke: #e74c3c !important; }
+        #canvas.all-black-except-emotion .text-box { border-color: #000 !important; background: #fff !important; }
+        #canvas.all-black-except-emotion .text-box-content { color: #000 !important; }
+        #canvas.all-black-except-emotion .text-box-drag-handle { background: #000 !important; color: #fff !important; }
     </style>
 </head>
 <body>
@@ -153,7 +99,8 @@
                 <li><strong>編輯成員：</strong>點擊成員，右側面板可修改姓名、性別、年齡、職業、備註、已故狀態，以及配偶／伴侶／情感關係。</li>
                 <li><strong>刪除成員：</strong>先點選成員，再點擊「🗑️ 刪除成員」。</li>
                 <li><strong>文字方塊：</strong>點擊「📝 文字方塊」新增，可拖曳、編輯、刪除。匯出 PNG 時不會顯示控制項。</li>
-                <li><strong>顏色切換：</strong>使用工具列的三個顏色按鈕可切換圖內符號與文字的顏色風格。</li>
+                <li><strong>鉛筆／橡皮擦：</strong>點擊「✏️ 鉛筆」可自由繪圖，點擊「🧹 橡皮擦」只擦除鉛筆痕跡，不影響其他元素。使用滑桿可調整筆觸粗細，點擊「↩️ 復原」可撤銷上一次鉛筆或橡皮擦操作。</li>
+                <li><strong>顏色切換：</strong>使用工具列的三個顏色按鈕可切換圖內符號與文字的顏色風格。<span style="color:#e67e22;">※ 此功能不會影響鉛筆／橡皮擦的繪圖內容。</span></li>
                 <li><strong>文字解析自動繪圖：</strong>輸入文字後點擊「解析文字」自動生成草圖。<span style="color:#e67e22;">⚠️ 目前僅支援三代以內、半結構化描述，職業不支援。</span></li>
                 <li><strong>匯出與匯入：</strong>使用工具列按鈕匯出 PNG、儲存 JSON、載入 JSON。匯出 PNG 時可選擇解析度（1x～5x），建議使用 3x 以上以獲得清晰圖片。</li>
             </ol>
@@ -186,10 +133,18 @@
                 <button data-type="ambivalent">愛恨交織</button>
             </div>
             <button id="btnAddTextBox" class="text-box-btn">📝 文字方塊</button>
-            <span style="margin-left:10px; font-weight:bold;">顏色：</span>
-            <button id="btnColorBlackAll" class="color-btn">A. 全部黑色</button>
-            <button id="btnColorBlackExceptEmotion" class="color-btn">B. 全部黑色(情感線紅)</button>
-            <button id="btnColorOriginal" class="color-btn">C. 恢復原色調</button>
+            <button id="btnPencil">✏️ 鉛筆</button>
+            <button id="btnEraser">🧹 橡皮擦</button>
+            <button id="btnUndo">↩️ 復原</button>
+            <input type="color" id="pencilColor" value="#000000" title="鉛筆顏色">
+            <label>鉛筆粗細：<input type="range" id="pencilSize" min="1" max="20" value="2"></label>
+            <label>橡皮擦粗細：<input type="range" id="eraserSize" min="5" max="50" value="20"></label>
+            <div class="color-group">
+                <span style="font-weight:bold;">顏色：</span>
+                <button id="btnColorBlackAll" class="color-btn">A. 全部黑色</button>
+                <button id="btnColorBlackExceptEmotion" class="color-btn">B. 全部黑色(情感線紅)</button>
+                <button id="btnColorOriginal" class="color-btn">C. 恢復原色調</button>
+            </div>
             <button id="btnExportPng" class="export-btn">📷 匯出 PNG</button>
             <select id="exportScale" class="export-scale-select">
                 <option value="1">1x</option>
@@ -205,7 +160,7 @@
         </div>
 
         <!-- 畫布 -->
-        <div id="canvas"><svg class="relation-lines" id="relationSvg"></svg></div>
+        <div id="canvas"><svg class="relation-lines" id="relationSvg"></svg><canvas id="freehandCanvas"></canvas></div>
     </div>
 
     <!-- 側邊欄 -->
@@ -221,19 +176,11 @@
             <label><input type="checkbox" id="edit-deceased"> 已故（交叉符號）</label>
             <div id="spouse-status-area" style="display:none;">
                 <label>配偶狀態：</label>
-                <select id="spouse-status-select">
-                    <option value="married">已婚</option>
-                    <option value="divorced">離婚</option>
-                    <option value="separated">分居</option>
-                </select>
+                <select id="spouse-status-select"><option value="married">已婚</option><option value="divorced">離婚</option><option value="separated">分居</option></select>
             </div>
             <div id="partner-status-area" style="display:none;">
                 <label>伴侶狀態：</label>
-                <select id="partner-status-select">
-                    <option value="together">同居/交往中</option>
-                    <option value="separated">分手</option>
-                    <option value="divorced">離異</option>
-                </select>
+                <select id="partner-status-select"><option value="together">同居/交往中</option><option value="separated">分手</option><option value="divorced">離異</option></select>
             </div>
             <div id="emotional-area" style="display:none; margin-top:10px; padding-top:10px; border-top:1px dashed #ccc;">
                 <label style="font-weight:bold;">情感關係：</label>
@@ -247,9 +194,11 @@
 
 <script>
 (function() {
-    // ========== DOM 元素 ==========
+    // DOM 元素
     const canvas = document.getElementById('canvas');
     const relationSvg = document.getElementById('relationSvg');
+    const freehandCanvas = document.getElementById('freehandCanvas');
+    const freehandCtx = freehandCanvas.getContext('2d');
     const btnAddMale = document.getElementById('btnAddMale');
     const btnAddFemale = document.getElementById('btnAddFemale');
     const btnAddUnknown = document.getElementById('btnAddUnknown');
@@ -260,6 +209,12 @@
     const btnFinishChild = document.getElementById('btnFinishChild');
     const emotionTypeButtons = document.getElementById('emotionTypeButtons');
     const btnAddTextBox = document.getElementById('btnAddTextBox');
+    const btnPencil = document.getElementById('btnPencil');
+    const btnEraser = document.getElementById('btnEraser');
+    const btnUndo = document.getElementById('btnUndo');
+    const pencilColor = document.getElementById('pencilColor');
+    const pencilSize = document.getElementById('pencilSize');
+    const eraserSize = document.getElementById('eraserSize');
     const btnColorBlackAll = document.getElementById('btnColorBlackAll');
     const btnColorBlackExceptEmotion = document.getElementById('btnColorBlackExceptEmotion');
     const btnColorOriginal = document.getElementById('btnColorOriginal');
@@ -289,7 +244,7 @@
     const btnParse = document.getElementById('btn-parse');
     const parseResult = document.getElementById('parse-result');
 
-    // ========== 狀態 ==========
+    // 狀態
     let memberIdCounter = 0;
     const members = new Map();
     let selectedMemberId = null;
@@ -305,8 +260,13 @@
     let textBoxIdCounter = 0;
     const textBoxes = new Map();
     let selectedTextBoxId = null;
+    let drawingMode = null;
+    let isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let undoStack = [];
+    const MAX_UNDO = 50;
 
-    // ========== 工具函式 ==========
+    // 工具函式
     function generateId() { return 'member-' + (++memberIdCounter); }
     function generateTextBoxId() { return 'textbox-' + (++textBoxIdCounter); }
     function getMemberCenter(memberId) {
@@ -322,25 +282,11 @@
     function getEmotionalKey(id1, id2) { const arr = [id1,id2].sort(); return 'emo-'+arr[0]+'|'+arr[1]; }
     function getSpousePair(memberId) { for (let [k,p] of spousePairs) if (p.id1===memberId||p.id2===memberId) return {key:k, pair:p}; return null; }
     function getPartnerPair(memberId) { for (let [k,p] of partnerPairs) if (p.id1===memberId||p.id2===memberId) return {key:k, pair:p}; return null; }
-    function getAllEmotionalPairs(memberId) {
-        const result = [];
-        for (let [k,p] of emotionalPairs) if (p.id1===memberId||p.id2===memberId) result.push({key:k, pair:p});
-        return result;
-    }
+    function getAllEmotionalPairs(memberId) { const result=[]; for(let [k,p] of emotionalPairs) if(p.id1===memberId||p.id2===memberId) result.push({key:k, pair:p}); return result; }
     function getGenderDisplay(g) { return g==='male'?'男':g==='female'?'女':'不明'; }
-    function getEmotionalTypeDisplay(type) { 
-        switch(type) { 
-            case 'very_close': return '非常親密'; 
-            case 'close': return '親密'; 
-            case 'distant': return '疏遠'; 
-            case 'conflict': return '衝突/欠佳'; 
-            case 'broken': return '溝通中斷'; 
-            case 'ambivalent': return '愛恨交織'; 
-            default: return ''; 
-        } 
-    }
+    function getEmotionalTypeDisplay(type) { switch(type){ case 'very_close': return '非常親密'; case 'close': return '親密'; case 'distant': return '疏遠'; case 'conflict': return '衝突/欠佳'; case 'broken': return '溝通中斷'; case 'ambivalent': return '愛恨交織'; default: return ''; } }
 
-    // ========== 文字解析 ==========
+    // 文字解析
     function normalizePunctuation(text) { return text.replace(/，/g,',').replace(/。/g,';').replace(/；/g,';').replace(/\./g,';').replace(/\s+/g,' ').trim(); }
     function parsePersonSegment(segment) {
         segment = segment.trim().replace(/[;；。.]+$/g,''); if(!segment) return null;
@@ -416,50 +362,41 @@
         html+='</ul>'; parseResult.innerHTML=html;
     }
 
-    // ========== 建立成員 ==========
+    // 建立成員
     function createMember(gender, options={}) {
         let id = options.id || generateId();
         if (options.id) { const num = parseInt(id.replace('member-','')); if (!isNaN(num)) memberIdCounter = Math.max(memberIdCounter, num); }
         const div = document.createElement('div'); div.className='member'; div.id=id; div.style.left=options.left||'0px'; div.style.top=options.top||'0px';
         const sym=document.createElement('div'); sym.className='member-symbol '+(gender==='male'?'male':gender==='female'?'female':'unknown');
-        // 符號內部留空
         const nameDiv=document.createElement('div'); nameDiv.className='member-name'; nameDiv.textContent=options.name||'未命名';
         const ageDiv=document.createElement('div'); ageDiv.className='member-age'; ageDiv.textContent=options.age||'';
         const occDiv=document.createElement('div'); occDiv.className='member-occupation'; occDiv.textContent=options.occupation||'';
         const noteDiv=document.createElement('div'); noteDiv.className='member-note'; noteDiv.textContent=options.note||'';
         div.appendChild(sym); div.appendChild(nameDiv); div.appendChild(ageDiv); div.appendChild(occDiv); div.appendChild(noteDiv);
-        if (options.deceased) sym.classList.add('deceased');
-        members.set(id, { element: div, gender, name: options.name||'未命名', age: options.age||'', occupation: options.occupation||'', note: options.note||'', deceased: options.deceased||false });
-        canvas.appendChild(div); makeDraggable(div); drawAllRelations();
-        return id;
+        if(options.deceased) sym.classList.add('deceased');
+        members.set(id,{element:div,gender,name:options.name||'未命名',age:options.age||'',occupation:options.occupation||'',note:options.note||'',deceased:options.deceased||false});
+        canvas.appendChild(div); makeDraggable(div); drawAllRelations(); return id;
     }
     function positionMemberAtCenter(div){
-        requestAnimationFrame(()=>{
-            const cr=canvas.getBoundingClientRect(); const w=div.offsetWidth,h=div.offsetHeight;
-            const cx=(cr.width-w)/2, cy=(cr.height-h)/2; const ox=(Math.random()-0.5)*40, oy=(Math.random()-0.5)*40;
-            div.style.left=Math.max(0,Math.min(cx+ox,cr.width-w))+'px'; div.style.top=Math.max(0,Math.min(cy+oy,cr.height-h))+'px'; drawAllRelations();
-        });
+        requestAnimationFrame(()=>{ const cr=canvas.getBoundingClientRect(); const w=div.offsetWidth,h=div.offsetHeight; const cx=(cr.width-w)/2,cy=(cr.height-h)/2; const ox=(Math.random()-0.5)*40,oy=(Math.random()-0.5)*40; div.style.left=Math.max(0,Math.min(cx+ox,cr.width-w))+'px'; div.style.top=Math.max(0,Math.min(cy+oy,cr.height-h))+'px'; drawAllRelations(); });
     }
     function setMemberInfo(id,name,age,occupation='',note=''){
-        const m=members.get(id); if(!m) return;
-        m.name=name; m.age=age||''; m.occupation=occupation; m.note=note;
-        m.element.querySelector('.member-name').textContent=name;
-        m.element.querySelector('.member-age').textContent=age||'';
-        m.element.querySelector('.member-occupation').textContent=occupation||'';
-        m.element.querySelector('.member-note').textContent=note||'';
+        const m=members.get(id); if(!m) return; m.name=name; m.age=age||''; m.occupation=occupation; m.note=note;
+        m.element.querySelector('.member-name').textContent=name; m.element.querySelector('.member-age').textContent=age||'';
+        m.element.querySelector('.member-occupation').textContent=occupation||''; m.element.querySelector('.member-note').textContent=note||'';
     }
 
-    // ========== 拖曳與點擊 ==========
+    // 拖曳與點擊
     function makeDraggable(el){
         let dragging=false,offX,offY,startX,startY; const TH=6;
-        el.addEventListener('mousedown',e=>{ e.preventDefault(); dragging=true; el.classList.add('dragging'); const r=el.getBoundingClientRect(); offX=e.clientX-r.left; offY=e.clientY-r.top; startX=e.clientX; startY=e.clientY; document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu); });
+        el.addEventListener('mousedown',e=>{ if(drawingMode) return; e.preventDefault(); dragging=true; el.classList.add('dragging'); const r=el.getBoundingClientRect(); offX=e.clientX-r.left; offY=e.clientY-r.top; startX=e.clientX; startY=e.clientY; document.addEventListener('mousemove',mm); document.addEventListener('mouseup',mu); });
         function mm(e){ if(!dragging)return; moveTo(e.clientX,e.clientY); }
         function moveTo(cx,cy){ const cr=canvas.getBoundingClientRect(); let x=cx-cr.left-offX, y=cy-cr.top-offY; const mr=el.getBoundingClientRect(); x=Math.max(0,Math.min(x,cr.width-mr.width)); y=Math.max(0,Math.min(y,cr.height-mr.height)); el.style.left=x+'px'; el.style.top=y+'px'; drawAllRelations(); }
         function mu(e){ dragging=false; el.classList.remove('dragging'); document.removeEventListener('mousemove',mm); document.removeEventListener('mouseup',mu); const dx=e.clientX-startX, dy=e.clientY-startY; if(Math.sqrt(dx*dx+dy*dy)<TH) handleClick(el.id); }
         function handleClick(id){ if(relationMode) handleRelationClick(id); else selectMember(id); }
     }
 
-    // ========== 選取與編輯 ==========
+    // 選取與編輯
     function selectMember(id){
         document.querySelectorAll('.member.relation-selected').forEach(e=>e.classList.remove('relation-selected'));
         if(selectedMemberId){ const old=members.get(selectedMemberId); if(old) old.element.classList.remove('selected'); }
@@ -491,7 +428,7 @@
             const otherName=members.get(otherId)?.name||'未知';
             const item=document.createElement('div'); item.className='emotional-item';
             const nameSpan=document.createElement('span'); nameSpan.textContent=otherName; nameSpan.style.minWidth='40px'; nameSpan.style.fontSize='0.85rem';
-            const select=document.createElement('select'); 
+            const select=document.createElement('select');
             select.innerHTML=`<option value="very_close" ${pair.type==='very_close'?'selected':''}>非常親密</option><option value="close" ${pair.type==='close'?'selected':''}>親密</option><option value="distant" ${pair.type==='distant'?'selected':''}>疏遠</option><option value="conflict" ${pair.type==='conflict'?'selected':''}>衝突/欠佳</option><option value="broken" ${pair.type==='broken'?'selected':''}>溝通中斷</option><option value="ambivalent" ${pair.type==='ambivalent'?'selected':''}>愛恨交織</option>`;
             select.addEventListener('change',()=>{ pair.type=select.value; drawAllRelations(); });
             const delBtn=document.createElement('button'); delBtn.textContent='🗑️'; delBtn.addEventListener('click',()=>{ emotionalPairs.delete(key); drawAllRelations(); renderEmotionalList(m); });
@@ -500,7 +437,7 @@
     }
     function hideEditPanel(){ sidebarHint.style.display='block'; editPanel.style.display='none'; editNameInput.oninput=null; editAgeInput.oninput=null; editOccupationInput.oninput=null; editNoteInput.oninput=null; editDeceasedCheckbox.onchange=null; spouseStatusSelect.onchange=null; partnerStatusSelect.onchange=null; }
 
-    // ========== 刪除成員 ==========
+    // 刪除成員
     function deleteSelectedMember(){
         if(!selectedMemberId)return; const mid=selectedMemberId;
         const spouseInfo=getSpousePair(mid); if(spouseInfo){ spousePairs.delete(spouseInfo.key); childMap.delete(spouseInfo.key); }
@@ -511,12 +448,12 @@
         members.get(mid).element.remove(); members.delete(mid); selectedMemberId=null; hideEditPanel(); drawAllRelations();
     }
 
-    // ========== 文字方塊 ==========
+    // 文字方塊
     function createTextBox(){
         const id=generateTextBoxId(); const div=document.createElement('div'); div.className='text-box'; div.id=id; div.style.left='100px'; div.style.top='100px';
-        const handle=document.createElement('div'); handle.className='text-box-drag-handle'; handle.textContent='≡ 拖曳'; handle.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); startDragTextBox(e,div); });
+        const handle=document.createElement('div'); handle.className='text-box-drag-handle'; handle.textContent='≡ 拖曳'; handle.addEventListener('mousedown',e=>{ if(drawingMode) return; e.stopPropagation(); e.preventDefault(); startDragTextBox(e,div); });
         const closeBtn=document.createElement('span'); closeBtn.className='text-box-close'; closeBtn.textContent='×'; closeBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); deleteTextBox(id); });
-        const content=document.createElement('div'); content.className='text-box-content'; content.contentEditable='true'; content.textContent='雙擊編輯文字'; content.addEventListener('mousedown',e=>{ e.stopPropagation(); selectTextBox(id); });
+        const content=document.createElement('div'); content.className='text-box-content'; content.contentEditable='true'; content.textContent='雙擊編輯文字'; content.addEventListener('mousedown',e=>{ if(drawingMode) return; e.stopPropagation(); selectTextBox(id); });
         div.appendChild(handle); div.appendChild(closeBtn); div.appendChild(content); canvas.appendChild(div); textBoxes.set(id,div); selectTextBox(id); return id;
     }
     function startDragTextBox(e,el){
@@ -528,9 +465,9 @@
     function selectTextBox(id){ if(selectedTextBoxId){ textBoxes.get(selectedTextBoxId)?.classList.remove('selected'); } selectedTextBoxId=id; textBoxes.get(id)?.classList.add('selected'); if(selectedMemberId){ members.get(selectedMemberId)?.element.classList.remove('selected'); selectedMemberId=null; hideEditPanel(); } }
     function deleteTextBox(id){ const el=textBoxes.get(id); if(el){ el.remove(); textBoxes.delete(id); if(selectedTextBoxId===id) selectedTextBoxId=null; } }
 
-    // ========== 關係模式 ==========
+    // 關係模式
     function setRelationMode(mode){
-        exitRelationMode(); relationMode=mode;
+        exitRelationMode(); exitDrawingMode(); relationMode=mode;
         btnSpouse.classList.remove('active-mode'); btnPartner.classList.remove('active-mode'); btnChild.classList.remove('active-mode'); btnEmotional.classList.remove('active-mode');
         btnFinishChild.style.display='none'; emotionTypeButtons.style.display='none'; emotionalPendingPair=null;
         if(mode==='spouse'){ btnSpouse.classList.add('active-mode'); relationHint.textContent='請點擊第一個成員'; }
@@ -545,7 +482,7 @@
         document.querySelectorAll('.member.relation-selected').forEach(e=>e.classList.remove('relation-selected')); relationMode=null; childSelectionState=null; emotionalPendingPair=null;
     }
 
-    // ========== 關係點擊 ==========
+    // 關係點擊
     function handleRelationClick(memberId){
         if(!relationMode)return; const el=members.get(memberId)?.element; if(!el)return;
         if(relationMode==='spouse'||relationMode==='partner'){
@@ -567,10 +504,10 @@
         }
     }
 
-    // ========== 情感類型按鈕 ==========
+    // 情感類型按鈕
     emotionTypeButtons.querySelectorAll('button').forEach(btn=>{ btn.addEventListener('click',()=>{ if(!emotionalPendingPair)return; const type=btn.dataset.type; const key=getEmotionalKey(emotionalPendingPair.id1,emotionalPendingPair.id2); emotionalPairs.set(key,{id1:emotionalPendingPair.id1,id2:emotionalPendingPair.id2,type}); exitRelationMode(); drawAllRelations(); }); });
 
-    // ========== 畫布空白處 ==========
+    // 畫布空白處
     canvas.addEventListener('click',function(e){
         if(e.target===canvas){
             if(relationMode==='child'&&childSelectionState&&childSelectionState.childId){ finalizeChildRelation(); }
@@ -593,7 +530,7 @@
         relationHint.style.display='inline-block'; relationHint.textContent='子女關係已建立'; setTimeout(()=>{ relationHint.style.display='none'; },2000);
     }
 
-    // ========== 繪製關係線（含所有改良） ==========
+    // 繪製關係線
     function drawAllRelations(){
         while(relationSvg.firstChild) relationSvg.removeChild(relationSvg.firstChild);
         // 配偶線
@@ -610,14 +547,12 @@
             const dx=p2.x-p1.x,dy=p2.y-p1.y,len=Math.sqrt(dx*dx+dy*dy)||1,nx=-dy/len*4,ny=dx/len*4;
             const l1=document.createElementNS('http://www.w3.org/2000/svg','line'); l1.setAttribute('x1',p1.x+nx); l1.setAttribute('y1',p1.y+ny); l1.setAttribute('x2',p2.x+nx); l1.setAttribute('y2',p2.y+ny); l1.setAttribute('stroke','#e67e22'); l1.setAttribute('stroke-width','2');
             const l2=document.createElementNS('http://www.w3.org/2000/svg','line'); l2.setAttribute('x1',p1.x-nx); l2.setAttribute('y1',p1.y-ny); l2.setAttribute('x2',p2.x-nx); l2.setAttribute('y2',p2.y-ny); l2.setAttribute('stroke','#e67e22'); l2.setAttribute('stroke-width','2');
-            if(pair.status==='together'){
-                l2.setAttribute('stroke-dasharray','6,4');
-            }
+            if(pair.status==='together'){ l2.setAttribute('stroke-dasharray','6,4'); }
             relationSvg.appendChild(l1); relationSvg.appendChild(l2);
             if(pair.status==='separated'){ const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2; const s=document.createElementNS('http://www.w3.org/2000/svg','line'); s.setAttribute('x1',mx-8); s.setAttribute('y1',my-8); s.setAttribute('x2',mx+8); s.setAttribute('y2',my+8); s.setAttribute('stroke','#e67e22'); s.setAttribute('stroke-width','2'); relationSvg.appendChild(s); }
             else if(pair.status==='divorced'){ const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2; const s1=document.createElementNS('http://www.w3.org/2000/svg','line'); s1.setAttribute('x1',mx-6); s1.setAttribute('y1',my-6); s1.setAttribute('x2',mx+6); s1.setAttribute('y2',my+6); s1.setAttribute('stroke','#e67e22'); s1.setAttribute('stroke-width','2'); const s2=document.createElementNS('http://www.w3.org/2000/svg','line'); s2.setAttribute('x1',mx-6); s2.setAttribute('y1',my+6); s2.setAttribute('x2',mx+6); s2.setAttribute('y2',my-6); s2.setAttribute('stroke','#e67e22'); s2.setAttribute('stroke-width','2'); relationSvg.appendChild(s1); relationSvg.appendChild(s2); }
         }
-        // 情感線（包含所有類型）
+        // 情感線
         for(let [k,pair] of emotionalPairs){
             const p1=getMemberCenter(pair.id1), p2=getMemberCenter(pair.id2); if(!p1||!p2) continue;
             const dx=p2.x-p1.x,dy=p2.y-p1.y,len=Math.sqrt(dx*dx+dy*dy)||1,nx=-dy/len*12,ny=dx/len*12;
@@ -629,129 +564,60 @@
                         line.setAttribute('x1',x1+i*5); line.setAttribute('y1',y1+i*5);
                         line.setAttribute('x2',x2+i*5); line.setAttribute('y2',y2+i*5);
                         line.setAttribute('stroke','#e74c3c'); line.setAttribute('stroke-width','4');
-                        line.setAttribute('class','emotional-line');
-                        relationSvg.appendChild(line);
+                        line.setAttribute('class','emotional-line'); relationSvg.appendChild(line);
                     }
                     break;
                 case 'close':
                     const closeLine=document.createElementNS('http://www.w3.org/2000/svg','line');
-                    closeLine.setAttribute('x1',x1); closeLine.setAttribute('y1',y1);
-                    closeLine.setAttribute('x2',x2); closeLine.setAttribute('y2',y2);
-                    closeLine.setAttribute('stroke','#e74c3c'); closeLine.setAttribute('stroke-width','2');
-                    closeLine.setAttribute('class','emotional-line');
-                    relationSvg.appendChild(closeLine);
+                    closeLine.setAttribute('x1',x1); closeLine.setAttribute('y1',y1); closeLine.setAttribute('x2',x2); closeLine.setAttribute('y2',y2);
+                    closeLine.setAttribute('stroke','#e74c3c'); closeLine.setAttribute('stroke-width','2'); closeLine.setAttribute('class','emotional-line'); relationSvg.appendChild(closeLine);
                     break;
                 case 'distant':
                     const dashLine=document.createElementNS('http://www.w3.org/2000/svg','line');
-                    dashLine.setAttribute('x1',x1); dashLine.setAttribute('y1',y1);
-                    dashLine.setAttribute('x2',x2); dashLine.setAttribute('y2',y2);
-                    dashLine.setAttribute('stroke','#e74c3c'); dashLine.setAttribute('stroke-width','2');
-                    dashLine.setAttribute('stroke-dasharray','8,6');
-                    dashLine.setAttribute('class','emotional-line');
-                    relationSvg.appendChild(dashLine);
+                    dashLine.setAttribute('x1',x1); dashLine.setAttribute('y1',y1); dashLine.setAttribute('x2',x2); dashLine.setAttribute('y2',y2);
+                    dashLine.setAttribute('stroke','#e74c3c'); dashLine.setAttribute('stroke-width','2'); dashLine.setAttribute('stroke-dasharray','8,6'); dashLine.setAttribute('class','emotional-line'); relationSvg.appendChild(dashLine);
                     break;
                 case 'conflict':
-                    const perpX=-dy/len, perpY=dx/len;
-                    const waveAmp=8;
-                    const segments=Math.max(Math.floor(len/12),3);
+                    const perpX=-dy/len, perpY=dx/len; const waveAmp=8; const segments=Math.max(Math.floor(len/12),3);
                     let d=`M ${x1} ${y1}`;
                     for(let i=1;i<=segments;i++){
-                        const t=i/segments;
-                        const bx=x1+dx*t, by=y1+dy*t;
-                        const sign=(i%2===0)?1:-1;
-                        const cx=bx+perpX*waveAmp*sign;
-                        const cy=by+perpY*waveAmp*sign;
-                        d+=` L ${cx} ${cy}`;
+                        const t=i/segments; const bx=x1+dx*t, by=y1+dy*t; const sign=(i%2===0)?1:-1;
+                        const cx=bx+perpX*waveAmp*sign; const cy=by+perpY*waveAmp*sign; d+=` L ${cx} ${cy}`;
                     }
                     d+=` L ${x2} ${y2}`;
                     const wavePath=document.createElementNS('http://www.w3.org/2000/svg','path');
-                    wavePath.setAttribute('d',d);
-                    wavePath.setAttribute('stroke','#e74c3c'); wavePath.setAttribute('stroke-width','2');
-                    wavePath.setAttribute('fill','none');
-                    wavePath.setAttribute('class','emotional-line');
-                    relationSvg.appendChild(wavePath);
+                    wavePath.setAttribute('d',d); wavePath.setAttribute('stroke','#e74c3c'); wavePath.setAttribute('stroke-width','2'); wavePath.setAttribute('fill','none'); wavePath.setAttribute('class','emotional-line'); relationSvg.appendChild(wavePath);
                     break;
                 case 'broken':
-                    const gap = 18;
-                    const gapHalf = gap / 2;
-                    const midX = (x1 + x2) / 2;
-                    const midY = (y1 + y2) / 2;
-                    const leftEndX = midX - (dx / len) * gapHalf;
-                    const leftEndY = midY - (dy / len) * gapHalf;
-                    const rightStartX = midX + (dx / len) * gapHalf;
-                    const rightStartY = midY + (dy / len) * gapHalf;
-
-                    const leftLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    leftLine.setAttribute('x1', x1); leftLine.setAttribute('y1', y1);
-                    leftLine.setAttribute('x2', leftEndX); leftLine.setAttribute('y2', leftEndY);
-                    leftLine.setAttribute('stroke', '#e74c3c'); leftLine.setAttribute('stroke-width', '2');
-                    leftLine.setAttribute('class', 'emotional-line');
-                    relationSvg.appendChild(leftLine);
-
-                    const rightLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    rightLine.setAttribute('x1', rightStartX); rightLine.setAttribute('y1', rightStartY);
-                    rightLine.setAttribute('x2', x2); rightLine.setAttribute('y2', y2);
-                    rightLine.setAttribute('stroke', '#e74c3c'); rightLine.setAttribute('stroke-width', '2');
-                    rightLine.setAttribute('class', 'emotional-line');
-                    relationSvg.appendChild(rightLine);
-
-                    const perpLen = 5;
-                    const leftPerpX = -dy / len * perpLen;
-                    const leftPerpY = dx / len * perpLen;
-                    const leftVertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    leftVertical.setAttribute('x1', leftEndX - leftPerpX);
-                    leftVertical.setAttribute('y1', leftEndY - leftPerpY);
-                    leftVertical.setAttribute('x2', leftEndX + leftPerpX);
-                    leftVertical.setAttribute('y2', leftEndY + leftPerpY);
-                    leftVertical.setAttribute('stroke', '#e74c3c'); leftVertical.setAttribute('stroke-width', '2');
-                    leftVertical.setAttribute('class', 'emotional-line');
-                    relationSvg.appendChild(leftVertical);
-
-                    const rightPerpX = -dy / len * perpLen;
-                    const rightPerpY = dx / len * perpLen;
-                    const rightVertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    rightVertical.setAttribute('x1', rightStartX - rightPerpX);
-                    rightVertical.setAttribute('y1', rightStartY - rightPerpY);
-                    rightVertical.setAttribute('x2', rightStartX + rightPerpX);
-                    rightVertical.setAttribute('y2', rightStartY + rightPerpY);
-                    rightVertical.setAttribute('stroke', '#e74c3c'); rightVertical.setAttribute('stroke-width', '2');
-                    rightVertical.setAttribute('class', 'emotional-line');
-                    relationSvg.appendChild(rightVertical);
+                    const gap=18, gapHalf=gap/2; const midX=(x1+x2)/2, midY=(y1+y2)/2;
+                    const leftEndX=midX-(dx/len)*gapHalf, leftEndY=midY-(dy/len)*gapHalf;
+                    const rightStartX=midX+(dx/len)*gapHalf, rightStartY=midY+(dy/len)*gapHalf;
+                    const leftLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+                    leftLine.setAttribute('x1',x1); leftLine.setAttribute('y1',y1); leftLine.setAttribute('x2',leftEndX); leftLine.setAttribute('y2',leftEndY); leftLine.setAttribute('stroke','#e74c3c'); leftLine.setAttribute('stroke-width','2'); leftLine.setAttribute('class','emotional-line'); relationSvg.appendChild(leftLine);
+                    const rightLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+                    rightLine.setAttribute('x1',rightStartX); rightLine.setAttribute('y1',rightStartY); rightLine.setAttribute('x2',x2); rightLine.setAttribute('y2',y2); rightLine.setAttribute('stroke','#e74c3c'); rightLine.setAttribute('stroke-width','2'); rightLine.setAttribute('class','emotional-line'); relationSvg.appendChild(rightLine);
+                    const perpLen=5;
+                    const leftPerpX=-dy/len*perpLen, leftPerpY=dx/len*perpLen;
+                    const leftVertical=document.createElementNS('http://www.w3.org/2000/svg','line');
+                    leftVertical.setAttribute('x1',leftEndX-leftPerpX); leftVertical.setAttribute('y1',leftEndY-leftPerpY); leftVertical.setAttribute('x2',leftEndX+leftPerpX); leftVertical.setAttribute('y2',leftEndY+leftPerpY); leftVertical.setAttribute('stroke','#e74c3c'); leftVertical.setAttribute('stroke-width','2'); leftVertical.setAttribute('class','emotional-line'); relationSvg.appendChild(leftVertical);
+                    const rightPerpX=-dy/len*perpLen, rightPerpY=dx/len*perpLen;
+                    const rightVertical=document.createElementNS('http://www.w3.org/2000/svg','line');
+                    rightVertical.setAttribute('x1',rightStartX-rightPerpX); rightVertical.setAttribute('y1',rightStartY-rightPerpY); rightVertical.setAttribute('x2',rightStartX+rightPerpX); rightVertical.setAttribute('y2',rightStartY+rightPerpY); rightVertical.setAttribute('stroke','#e74c3c'); rightVertical.setAttribute('stroke-width','2'); rightVertical.setAttribute('class','emotional-line'); relationSvg.appendChild(rightVertical);
                     break;
                 case 'ambivalent':
-                    const solidLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-                    solidLine.setAttribute('x1', x1); solidLine.setAttribute('y1', y1);
-                    solidLine.setAttribute('x2', x2); solidLine.setAttribute('y2', y2);
-                    solidLine.setAttribute('stroke', '#e74c3c'); solidLine.setAttribute('stroke-width', '3');
-                    solidLine.setAttribute('class', 'emotional-line');
-                    relationSvg.appendChild(solidLine);
-
-                    const offset = 8;
-                    const perpOffsetX = -dy / len * offset;
-                    const perpOffsetY = dx / len * offset;
-                    const zigX1 = x1 + perpOffsetX;
-                    const zigY1 = y1 + perpOffsetY;
-                    const zigX2 = x2 + perpOffsetX;
-                    const zigY2 = y2 + perpOffsetY;
-                    const zigSegments = Math.max(Math.floor(len / 10), 3);
-                    let zigD = `M ${zigX1} ${zigY1}`;
-                    for (let i = 1; i <= zigSegments; i++) {
-                        const t = i / zigSegments;
-                        const baseX = zigX1 + (zigX2 - zigX1) * t;
-                        const baseY = zigY1 + (zigY2 - zigY1) * t;
-                        const sign = (i % 2 === 0) ? 1 : -1;
-                        const offsetAmp = 6;
-                        const cx = baseX + (-dy / len) * offsetAmp * sign;
-                        const cy = baseY + (dx / len) * offsetAmp * sign;
-                        zigD += ` L ${cx} ${cy}`;
+                    const solidLine=document.createElementNS('http://www.w3.org/2000/svg','line');
+                    solidLine.setAttribute('x1',x1); solidLine.setAttribute('y1',y1); solidLine.setAttribute('x2',x2); solidLine.setAttribute('y2',y2); solidLine.setAttribute('stroke','#e74c3c'); solidLine.setAttribute('stroke-width','3'); solidLine.setAttribute('class','emotional-line'); relationSvg.appendChild(solidLine);
+                    const offset=8; const perpOffsetX=-dy/len*offset, perpOffsetY=dx/len*offset;
+                    const zigX1=x1+perpOffsetX, zigY1=y1+perpOffsetY, zigX2=x2+perpOffsetX, zigY2=y2+perpOffsetY;
+                    const zigSegments=Math.max(Math.floor(len/10),3); let zigD=`M ${zigX1} ${zigY1}`;
+                    for(let i=1;i<=zigSegments;i++){
+                        const t=i/zigSegments; const baseX=zigX1+(zigX2-zigX1)*t, baseY=zigY1+(zigY2-zigY1)*t;
+                        const sign=(i%2===0)?1:-1; const offsetAmp=6;
+                        const cx=baseX+(-dy/len)*offsetAmp*sign, cy=baseY+(dx/len)*offsetAmp*sign; zigD+=` L ${cx} ${cy}`;
                     }
-                    zigD += ` L ${zigX2} ${zigY2}`;
-                    const zigPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    zigPath.setAttribute('d', zigD);
-                    zigPath.setAttribute('stroke', '#e74c3c'); zigPath.setAttribute('stroke-width', '2');
-                    zigPath.setAttribute('fill', 'none');
-                    zigPath.setAttribute('class', 'emotional-line');
-                    relationSvg.appendChild(zigPath);
+                    zigD+=` L ${zigX2} ${zigY2}`;
+                    const zigPath=document.createElementNS('http://www.w3.org/2000/svg','path');
+                    zigPath.setAttribute('d',zigD); zigPath.setAttribute('stroke','#e74c3c'); zigPath.setAttribute('stroke-width','2'); zigPath.setAttribute('fill','none'); zigPath.setAttribute('class','emotional-line'); relationSvg.appendChild(zigPath);
                     break;
             }
         }
@@ -779,15 +645,17 @@
         }
     }
 
-    // ========== 清空畫布 ==========
+    // 清空畫布
     function clearCanvas(){
         document.querySelectorAll('.member').forEach(el=>el.remove());
         document.querySelectorAll('.text-box').forEach(el=>el.remove());
+        freehandCtx.clearRect(0,0,freehandCanvas.width,freehandCanvas.height);
+        undoStack = [];
         members.clear(); textBoxes.clear(); spousePairs.clear(); partnerPairs.clear(); coParentPairs.clear(); childMap.clear(); emotionalPairs.clear();
         selectedMemberId=null; selectedTextBoxId=null; hideEditPanel(); drawAllRelations();
     }
 
-    // ========== 自動繪圖 ==========
+    // 自動繪圖
     function autoDrawFromParsed(parsedData){
         if(parsedData.length===0||parsedData[0].error)return;
         if(members.size>0||textBoxes.size>0){ if(!confirm('畫布上已有成員或文字方塊，是否清除並重新繪製？'))return; clearCanvas(); }
@@ -808,49 +676,67 @@
         groups.forEach((ids,depth)=>{ const y=startY+depth*yGap; let x=startX; ids.forEach(id=>{ const member=members.get(id); if(!member)return; const w=member.element.offsetWidth; member.element.style.left=Math.max(0,Math.min(x,cr.width-w))+'px'; member.element.style.top=y+'px'; x+=xGap; }); });
     }
 
-    // ========== 匯出 PNG ==========
+    // 匯出 PNG
     async function exportPng(){
-        deselectMember(); if(selectedTextBoxId){ textBoxes.get(selectedTextBoxId)?.classList.remove('selected'); selectedTextBoxId=null; } if(relationMode) exitRelationMode();
+        deselectMember(); if(selectedTextBoxId){ textBoxes.get(selectedTextBoxId)?.classList.remove('selected'); selectedTextBoxId=null; } if(relationMode) exitRelationMode(); exitDrawingMode();
         const handles=document.querySelectorAll('.text-box-drag-handle'); const closeBtns=document.querySelectorAll('.text-box-close'); const originalDisplays=[];
         handles.forEach(h=>{ originalDisplays.push({el:h,display:h.style.display}); h.style.display='none'; }); closeBtns.forEach(c=>{ originalDisplays.push({el:c,display:c.style.display}); c.style.display='none'; });
         try{
             const scale = parseInt(exportScaleSelect.value) || 3;
             const canvasElement = document.getElementById('canvas');
-            const canvasImage = await html2canvas(canvasElement, {
-                backgroundColor: '#ffffff',
-                scale: scale,
-                useCORS: true,
-                logging: false
-            });
-            const link = document.createElement('a');
-            link.download = 'family-diagram.png';
-            link.href = canvasImage.toDataURL('image/png');
-            link.click();
-        }
-        catch(err){ console.error('匯出失敗',err); }
+            const canvasImage = await html2canvas(canvasElement, { backgroundColor:'#ffffff', scale:scale, useCORS:true, logging:false });
+            const link=document.createElement('a'); link.download='family-diagram.png'; link.href=canvasImage.toDataURL('image/png'); link.click();
+        } catch(err){ console.error('匯出失敗',err); }
         finally{ originalDisplays.forEach(item=>{ item.el.style.display=item.display; }); }
     }
 
-    // ========== 儲存 JSON ==========
+    // 儲存 JSON
     function saveJson(){
-        const data={ members:Array.from(members.entries()).map(([id,m])=>({id,gender:m.gender,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,left:m.element.style.left,top:m.element.style.top})), spousePairs:Array.from(spousePairs.entries()).map(([key,pair])=>({key,...pair})), partnerPairs:Array.from(partnerPairs.entries()).map(([key,pair])=>({key,...pair})), coParentPairs:Array.from(coParentPairs.entries()).map(([key,pair])=>({key,...pair})), childMap:Array.from(childMap.entries()).map(([key,children])=>({key,children})), emotionalPairs:Array.from(emotionalPairs.entries()).map(([key,pair])=>({key,...pair})), textBoxes:Array.from(textBoxes.entries()).map(([id,el])=>({id,left:el.style.left,top:el.style.top,content:el.querySelector('.text-box-content').innerText})) };
+        const data={
+            members:Array.from(members.entries()).map(([id,m])=>({id,gender:m.gender,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,left:m.element.style.left,top:m.element.style.top})),
+            spousePairs:Array.from(spousePairs.entries()).map(([key,pair])=>({key,...pair})),
+            partnerPairs:Array.from(partnerPairs.entries()).map(([key,pair])=>({key,...pair})),
+            coParentPairs:Array.from(coParentPairs.entries()).map(([key,pair])=>({key,...pair})),
+            childMap:Array.from(childMap.entries()).map(([key,children])=>({key,children})),
+            emotionalPairs:Array.from(emotionalPairs.entries()).map(([key,pair])=>({key,...pair})),
+            textBoxes:Array.from(textBoxes.entries()).map(([id,el])=>({id,left:el.style.left,top:el.style.top,content:el.querySelector('.text-box-content').innerText})),
+            freehandData: freehandCanvas.toDataURL()
+        };
         const json=JSON.stringify(data,null,2); const blob=new Blob([json],{type:'application/json'}); const url=URL.createObjectURL(blob); const link=document.createElement('a'); link.download='family-diagram.json'; link.href=url; link.click(); URL.revokeObjectURL(url);
     }
 
-    // ========== 載入 JSON ==========
+    // 載入 JSON
     function loadJson(file){
-        const reader=new FileReader(); reader.onload=(e)=>{ try{ const data=JSON.parse(e.target.result); if(!data.members||!Array.isArray(data.members)) throw new Error('格式錯誤'); clearCanvas(); data.members.forEach(m=>{ createMember(m.gender,{id:m.id,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,left:m.left,top:m.top}); }); if(data.spousePairs) data.spousePairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) spousePairs.set(pair.key,{id1:pair.id1,id2:pair.id2,status:pair.status||'married'}); }); if(data.partnerPairs) data.partnerPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) partnerPairs.set(pair.key,{id1:pair.id1,id2:pair.id2,status:pair.status||'together'}); }); if(data.coParentPairs) data.coParentPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) coParentPairs.set(pair.key,{id1:pair.id1,id2:pair.id2}); }); if(data.childMap) data.childMap.forEach(rel=>{ if(rel.children&&Array.isArray(rel.children)) childMap.set(rel.key,rel.children); }); if(data.emotionalPairs) data.emotionalPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) emotionalPairs.set(pair.key,{id1:pair.id1,id2:pair.id2,type:pair.type}); }); if(data.textBoxes) data.textBoxes.forEach(tb=>{ const id=tb.id||generateTextBoxId(); const div=document.createElement('div'); div.className='text-box'; div.id=id; div.style.left=tb.left||'100px'; div.style.top=tb.top||'100px'; const handle=document.createElement('div'); handle.className='text-box-drag-handle'; handle.textContent='≡ 拖曳'; handle.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); startDragTextBox(e,div); }); const closeBtn=document.createElement('span'); closeBtn.className='text-box-close'; closeBtn.textContent='×'; closeBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); deleteTextBox(id); }); const content=document.createElement('div'); content.className='text-box-content'; content.contentEditable='true'; content.textContent=tb.content||''; content.addEventListener('mousedown',e=>{ e.stopPropagation(); selectTextBox(id); }); div.appendChild(handle); div.appendChild(closeBtn); div.appendChild(content); canvas.appendChild(div); textBoxes.set(id,div); }); drawAllRelations(); alert('載入成功！'); }catch(err){ alert('JSON 檔案格式錯誤：'+err.message); } }; reader.readAsText(file);
+        const reader=new FileReader();
+        reader.onload=(e)=>{
+            try{
+                const data=JSON.parse(e.target.result);
+                if(!data.members||!Array.isArray(data.members)) throw new Error('格式錯誤');
+                clearCanvas();
+                data.members.forEach(m=>{ createMember(m.gender,{id:m.id,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,left:m.left,top:m.top}); });
+                if(data.spousePairs) data.spousePairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) spousePairs.set(pair.key,{id1:pair.id1,id2:pair.id2,status:pair.status||'married'}); });
+                if(data.partnerPairs) data.partnerPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) partnerPairs.set(pair.key,{id1:pair.id1,id2:pair.id2,status:pair.status||'together'}); });
+                if(data.coParentPairs) data.coParentPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) coParentPairs.set(pair.key,{id1:pair.id1,id2:pair.id2}); });
+                if(data.childMap) data.childMap.forEach(rel=>{ if(rel.children&&Array.isArray(rel.children)) childMap.set(rel.key,rel.children); });
+                if(data.emotionalPairs) data.emotionalPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) emotionalPairs.set(pair.key,{id1:pair.id1,id2:pair.id2,type:pair.type}); });
+                if(data.textBoxes) data.textBoxes.forEach(tb=>{ const id=tb.id||generateTextBoxId(); const div=document.createElement('div'); div.className='text-box'; div.id=id; div.style.left=tb.left||'100px'; div.style.top=tb.top||'100px'; const handle=document.createElement('div'); handle.className='text-box-drag-handle'; handle.textContent='≡ 拖曳'; handle.addEventListener('mousedown',e=>{ if(drawingMode) return; e.stopPropagation(); e.preventDefault(); startDragTextBox(e,div); }); const closeBtn=document.createElement('span'); closeBtn.className='text-box-close'; closeBtn.textContent='×'; closeBtn.addEventListener('mousedown',e=>{ e.stopPropagation(); e.preventDefault(); deleteTextBox(id); }); const content=document.createElement('div'); content.className='text-box-content'; content.contentEditable='true'; content.textContent=tb.content||''; content.addEventListener('mousedown',e=>{ if(drawingMode) return; e.stopPropagation(); selectTextBox(id); }); div.appendChild(handle); div.appendChild(closeBtn); div.appendChild(content); canvas.appendChild(div); textBoxes.set(id,div); });
+                if(data.freehandData){ const img=new Image(); img.onload=()=>{ freehandCtx.drawImage(img,0,0); }; img.src=data.freehandData; }
+                drawAllRelations();
+                alert('載入成功！');
+            }catch(err){ alert('JSON 檔案格式錯誤：'+err.message); }
+        };
+        reader.readAsText(file);
     }
 
-    // ========== 事件綁定 ==========
-    btnAddMale.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); const id=createMember('male'); positionMemberAtCenter(members.get(id).element); });
-    btnAddFemale.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); const id=createMember('female'); positionMemberAtCenter(members.get(id).element); });
-    btnAddUnknown.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); const id=createMember('unknown'); positionMemberAtCenter(members.get(id).element); });
+    // 事件綁定
+    btnAddMale.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); exitDrawingMode(); const id=createMember('male'); positionMemberAtCenter(members.get(id).element); });
+    btnAddFemale.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); exitDrawingMode(); const id=createMember('female'); positionMemberAtCenter(members.get(id).element); });
+    btnAddUnknown.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); exitDrawingMode(); const id=createMember('unknown'); positionMemberAtCenter(members.get(id).element); });
     btnSpouse.addEventListener('click',()=>{ if(relationMode==='spouse')exitRelationMode(); else setRelationMode('spouse'); });
     btnPartner.addEventListener('click',()=>{ if(relationMode==='partner')exitRelationMode(); else setRelationMode('partner'); });
     btnChild.addEventListener('click',()=>{ if(relationMode==='child')exitRelationMode(); else setRelationMode('child'); });
     btnEmotional.addEventListener('click',()=>{ if(relationMode==='emotional')exitRelationMode(); else setRelationMode('emotional'); });
-    btnAddTextBox.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); createTextBox(); });
+    btnAddTextBox.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); exitDrawingMode(); createTextBox(); });
     btnDelete.addEventListener('click',deleteSelectedMember);
     btnDeselect.addEventListener('click',()=>{ if(relationMode)exitRelationMode(); deselectMember(); });
     btnParse.addEventListener('click',()=>{ const text=familyTextInput.value.trim(); if(!text){ alert('請輸入家庭描述。'); return; } const parsed=parseFamilyText(text); displayParseResult(parsed); autoDrawFromParsed(parsed); });
@@ -859,14 +745,79 @@
     btnLoadJson.addEventListener('click',()=>{ fileInput.click(); });
     fileInput.addEventListener('change',(e)=>{ if(e.target.files.length>0) loadJson(e.target.files[0]); fileInput.value=''; });
 
-    // 顏色切換按鈕
+    // 繪圖模式
+    btnPencil.addEventListener('click',()=>{ exitRelationMode(); deselectMember(); exitDrawingMode(); drawingMode='pencil'; freehandCanvas.classList.add('active'); btnPencil.classList.add('active-mode'); });
+    btnEraser.addEventListener('click',()=>{ exitRelationMode(); deselectMember(); exitDrawingMode(); drawingMode='eraser'; freehandCanvas.classList.add('active'); btnEraser.classList.add('active-mode'); });
+    function exitDrawingMode(){
+        drawingMode=null; isDrawing=false;
+        freehandCanvas.classList.remove('active');
+        btnPencil.classList.remove('active-mode'); btnEraser.classList.remove('active-mode');
+    }
+
+    // 復原功能
+    btnUndo.addEventListener('click',()=>{
+        if(undoStack.length===0) return;
+        const previousDataURL = undoStack.pop();
+        const img = new Image();
+        img.onload = () => {
+            freehandCtx.globalCompositeOperation = 'source-over';
+            freehandCtx.clearRect(0,0,freehandCanvas.width,freehandCanvas.height);
+            freehandCtx.drawImage(img,0,0);
+            freehandCtx.globalCompositeOperation = 'source-over';
+        };
+        img.src = previousDataURL;
+    });
+
+    // 自由繪圖事件
+    function initFreehandCanvas(){
+        function resizeFreehandCanvas(){
+            const rect=canvas.getBoundingClientRect();
+            const oldData=freehandCanvas.toDataURL();
+            freehandCanvas.width=rect.width;
+            freehandCanvas.height=rect.height;
+            const img=new Image();
+            img.onload=()=>{ freehandCtx.globalCompositeOperation='source-over'; freehandCtx.drawImage(img,0,0); };
+            img.src=oldData;
+        }
+        resizeFreehandCanvas();
+        window.addEventListener('resize', resizeFreehandCanvas);
+        freehandCanvas.addEventListener('mousedown',(e)=>{
+            if(!drawingMode) return;
+            isDrawing=true;
+            if(undoStack.length >= MAX_UNDO) undoStack.shift();
+            undoStack.push(freehandCanvas.toDataURL());
+            const rect=freehandCanvas.getBoundingClientRect();
+            lastX=e.clientX-rect.left;
+            lastY=e.clientY-rect.top;
+        });
+        freehandCanvas.addEventListener('mousemove',(e)=>{
+            if(!isDrawing||!drawingMode) return;
+            const rect=freehandCanvas.getBoundingClientRect();
+            const x=e.clientX-rect.left;
+            const y=e.clientY-rect.top;
+            freehandCtx.beginPath();
+            freehandCtx.moveTo(lastX,lastY);
+            freehandCtx.lineTo(x,y);
+            freehandCtx.lineWidth = drawingMode==='pencil' ? parseInt(pencilSize.value) : parseInt(eraserSize.value);
+            freehandCtx.lineCap='round';
+            freehandCtx.strokeStyle = drawingMode==='pencil' ? pencilColor.value : 'rgba(0,0,0,1)';
+            freehandCtx.globalCompositeOperation = drawingMode==='pencil' ? 'source-over' : 'destination-out';
+            freehandCtx.stroke();
+            lastX=x; lastY=y;
+        });
+        freehandCanvas.addEventListener('mouseup',()=>{ isDrawing=false; freehandCtx.globalCompositeOperation='source-over'; });
+        freehandCanvas.addEventListener('mouseleave',()=>{ isDrawing=false; freehandCtx.globalCompositeOperation='source-over'; });
+    }
+    initFreehandCanvas();
+
+    // 顏色切換
     btnColorBlackAll.addEventListener('click',()=>{ canvas.classList.remove('all-black-except-emotion'); canvas.classList.add('all-black'); });
     btnColorBlackExceptEmotion.addEventListener('click',()=>{ canvas.classList.remove('all-black'); canvas.classList.add('all-black-except-emotion'); });
     btnColorOriginal.addEventListener('click',()=>{ canvas.classList.remove('all-black'); canvas.classList.remove('all-black-except-emotion'); });
 
     document.addEventListener('keydown',(e)=>{ if(e.key==='Delete'&&selectedTextBoxId&&!relationMode&&document.activeElement?.contentEditable!=='true'){ e.preventDefault(); deleteTextBox(selectedTextBoxId); } });
 
-    // ========== 初始化 ==========
+    // 初始化
     window.addEventListener('load',()=>{ setTimeout(()=>{ const m=createMember('male'); positionMemberAtCenter(members.get(m).element); const f=createMember('female'); positionMemberAtCenter(members.get(f).element); },100); });
 })();
 </script>
