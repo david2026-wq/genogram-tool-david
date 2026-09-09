@@ -42,6 +42,7 @@
         .member-symbol.deceased::after { content: ''; position: absolute; top: 50%; left: -20%; width: 140%; height: 3px; background: #333; }
         .member-symbol.deceased::before { transform: rotate(45deg); }
         .member-symbol.deceased::after { transform: rotate(-45deg); }
+        .member-symbol.ip-highlight { outline: 3px solid #000; outline-offset: 3px; }
         .member-name { font-size: 0.9rem; background: rgba(255,255,255,0.8); padding: 2px 4px; border-radius: 4px; }
         .member-age, .member-occupation, .member-note { font-size: 0.8rem; margin-top: 2px; }
         .member-age { color: #666; }
@@ -86,8 +87,6 @@
 <div class="app-container">
     <div class="main-area">
         <h1>家庭圖繪製工具（基礎版）</h1>
-
-        <!-- 操作說明 -->
         <details class="instruction-box" open>
             <summary>📘 操作說明（點擊展開/收合）</summary>
             <ol>
@@ -96,7 +95,7 @@
                 <li><strong>設定伴侶：</strong>點擊「💑 設為伴侶」，再依序點擊兩位成員，會以<strong>橙色單實線＋單虛線</strong>連接。側邊欄可修改伴侶狀態（同居／分手／離異）。</li>
                 <li><strong>設定子女：</strong>點擊「👶 設為子女」→ 先點擊子女成員 → 再點擊一位或兩位父母 → 點擊「✅ 完成子女設定」或空白處。</li>
                 <li><strong>設定情感關係：</strong>點擊「❤️ 情感關係」，依序點擊兩位成員，再選擇關係類型（非常親密、親密、疏遠、衝突/欠佳、溝通中斷、愛恨交織）。一位成員可與多位成員建立情感關係。</li>
-                <li><strong>編輯成員：</strong>點擊成員，右側面板可修改姓名、性別、年齡、職業、備註、已故狀態，以及配偶／伴侶／情感關係。</li>
+                <li><strong>編輯成員：</strong>點擊成員，右側面板可修改姓名、性別、年齡、職業、備註、已故狀態、<strong>設為指認個案（IP 雙框）</strong>，以及配偶／伴侶／情感關係。</li>
                 <li><strong>刪除成員：</strong>先點選成員，再點擊「🗑️ 刪除成員」。</li>
                 <li><strong>文字方塊：</strong>點擊「📝 文字方塊」新增，可拖曳、編輯、刪除。匯出 PNG 時不會顯示控制項。</li>
                 <li><strong>鉛筆／橡皮擦：</strong>點擊「✏️ 鉛筆」可自由繪圖，點擊「🧹 橡皮擦」只擦除鉛筆痕跡，不影響其他元素。使用滑桿可調整筆觸粗細，點擊「↩️ 復原」可撤銷上一次鉛筆或橡皮擦操作。</li>
@@ -105,16 +104,12 @@
                 <li><strong>匯出與匯入：</strong>使用工具列按鈕匯出 PNG、儲存 JSON、載入 JSON。匯出 PNG 時可選擇解析度（1x～5x），建議使用 3x 以上以獲得清晰圖片。</li>
             </ol>
         </details>
-
-        <!-- 文字解析區塊 -->
         <div class="parser-section">
             <textarea id="family-text-input" placeholder="請輸入家庭描述，例如：張三，男，45歲，與李四，女，43歲，結婚，育有一子張小明（男，15歲）、一女張小紅（女，10歲）。"></textarea>
             <button class="parse-btn" id="btn-parse">解析文字（測試中）</button>
             <div class="parse-result" id="parse-result" style="display:none;"></div>
             <div class="format-note">※ 目前僅支援三代以內、半結構化描述。</div>
         </div>
-
-        <!-- 工具列 -->
         <div class="toolbar">
             <button id="btnAddMale">➕ 男性</button>
             <button id="btnAddFemale">➕ 女性</button>
@@ -158,12 +153,8 @@
             <input type="file" id="fileInput" accept="application/json" style="display:none;">
             <span id="relationHint" class="relation-hint" style="display:none;"></span>
         </div>
-
-        <!-- 畫布 -->
         <div id="canvas"><svg class="relation-lines" id="relationSvg"></svg><canvas id="freehandCanvas"></canvas></div>
     </div>
-
-    <!-- 側邊欄 -->
     <div class="sidebar">
         <h3>成員屬性</h3>
         <div id="hint">👆 點擊成員編輯</div>
@@ -174,6 +165,7 @@
             <label>職業：<input type="text" id="edit-occupation" placeholder="例如 教師"></label>
             <label>備註：<input type="text" id="edit-note" placeholder="例如 長期病患"></label>
             <label><input type="checkbox" id="edit-deceased"> 已故（交叉符號）</label>
+            <label><input type="checkbox" id="edit-ip"> 設為指認個案（IP 雙框）</label>
             <div id="spouse-status-area" style="display:none;">
                 <label>配偶狀態：</label>
                 <select id="spouse-status-select"><option value="married">已婚</option><option value="divorced">離婚</option><option value="separated">分居</option></select>
@@ -191,7 +183,6 @@
         </div>
     </div>
 </div>
-
 <script>
 (function() {
     // DOM 元素
@@ -232,6 +223,7 @@
     const editOccupationInput = document.getElementById('edit-occupation');
     const editNoteInput = document.getElementById('edit-note');
     const editDeceasedCheckbox = document.getElementById('edit-deceased');
+    const editIpCheckbox = document.getElementById('edit-ip');
     const spouseStatusArea = document.getElementById('spouse-status-area');
     const spouseStatusSelect = document.getElementById('spouse-status-select');
     const partnerStatusArea = document.getElementById('partner-status-area');
@@ -362,19 +354,23 @@
         html+='</ul>'; parseResult.innerHTML=html;
     }
 
-    // 建立成員
+    // 建立成員（含 IP）
     function createMember(gender, options={}) {
         let id = options.id || generateId();
         if (options.id) { const num = parseInt(id.replace('member-','')); if (!isNaN(num)) memberIdCounter = Math.max(memberIdCounter, num); }
         const div = document.createElement('div'); div.className='member'; div.id=id; div.style.left=options.left||'0px'; div.style.top=options.top||'0px';
         const sym=document.createElement('div'); sym.className='member-symbol '+(gender==='male'?'male':gender==='female'?'female':'unknown');
+        // 符號內部留空
         const nameDiv=document.createElement('div'); nameDiv.className='member-name'; nameDiv.textContent=options.name||'未命名';
         const ageDiv=document.createElement('div'); ageDiv.className='member-age'; ageDiv.textContent=options.age||'';
         const occDiv=document.createElement('div'); occDiv.className='member-occupation'; occDiv.textContent=options.occupation||'';
         const noteDiv=document.createElement('div'); noteDiv.className='member-note'; noteDiv.textContent=options.note||'';
         div.appendChild(sym); div.appendChild(nameDiv); div.appendChild(ageDiv); div.appendChild(occDiv); div.appendChild(noteDiv);
         if(options.deceased) sym.classList.add('deceased');
-        members.set(id,{element:div,gender,name:options.name||'未命名',age:options.age||'',occupation:options.occupation||'',note:options.note||'',deceased:options.deceased||false});
+        if(options.isIP) sym.classList.add('ip-highlight');
+        members.set(id,{
+            element: div, gender: gender, name: options.name||'未命名', age: options.age||'', occupation: options.occupation||'', note: options.note||'', deceased: options.deceased||false, isIP: options.isIP||false
+        });
         canvas.appendChild(div); makeDraggable(div); drawAllRelations(); return id;
     }
     function positionMemberAtCenter(div){
@@ -408,6 +404,7 @@
     function showEditPanel(m){
         sidebarHint.style.display='none'; editPanel.style.display='block';
         editNameInput.value=m.name; editGenderSpan.textContent=getGenderDisplay(m.gender); editAgeInput.value=m.age||''; editOccupationInput.value=m.occupation||''; editNoteInput.value=m.note||''; editDeceasedCheckbox.checked=m.deceased;
+        editIpCheckbox.checked = m.isIP;
         const spouseInfo=getSpousePair(selectedMemberId); if(spouseInfo){ spouseStatusArea.style.display='block'; spouseStatusSelect.value=spouseInfo.pair.status; } else spouseStatusArea.style.display='none';
         const partnerInfo=getPartnerPair(selectedMemberId); if(partnerInfo){ partnerStatusArea.style.display='block'; partnerStatusSelect.value=partnerInfo.pair.status; } else partnerStatusArea.style.display='none';
         renderEmotionalList(m);
@@ -416,6 +413,7 @@
         editOccupationInput.oninput=()=>{ m.occupation=editOccupationInput.value.trim(); m.element.querySelector('.member-occupation').textContent=m.occupation; };
         editNoteInput.oninput=()=>{ m.note=editNoteInput.value.trim(); m.element.querySelector('.member-note').textContent=m.note; };
         editDeceasedCheckbox.onchange=()=>{ m.deceased=editDeceasedCheckbox.checked; const sym=m.element.querySelector('.member-symbol'); if(m.deceased) sym.classList.add('deceased'); else sym.classList.remove('deceased'); };
+        editIpCheckbox.onchange=()=>{ m.isIP=editIpCheckbox.checked; const sym=m.element.querySelector('.member-symbol'); if(m.isIP) sym.classList.add('ip-highlight'); else sym.classList.remove('ip-highlight'); };
         spouseStatusSelect.onchange=()=>{ if(spouseInfo){ spouseInfo.pair.status=spouseStatusSelect.value; drawAllRelations(); } };
         partnerStatusSelect.onchange=()=>{ if(partnerInfo){ partnerInfo.pair.status=partnerStatusSelect.value; drawAllRelations(); } };
     }
@@ -435,7 +433,7 @@
             item.appendChild(nameSpan); item.appendChild(select); item.appendChild(delBtn); emotionalList.appendChild(item);
         });
     }
-    function hideEditPanel(){ sidebarHint.style.display='block'; editPanel.style.display='none'; editNameInput.oninput=null; editAgeInput.oninput=null; editOccupationInput.oninput=null; editNoteInput.oninput=null; editDeceasedCheckbox.onchange=null; spouseStatusSelect.onchange=null; partnerStatusSelect.onchange=null; }
+    function hideEditPanel(){ sidebarHint.style.display='block'; editPanel.style.display='none'; editNameInput.oninput=null; editAgeInput.oninput=null; editOccupationInput.oninput=null; editNoteInput.oninput=null; editDeceasedCheckbox.onchange=null; editIpCheckbox.onchange=null; spouseStatusSelect.onchange=null; partnerStatusSelect.onchange=null; }
 
     // 刪除成員
     function deleteSelectedMember(){
@@ -693,7 +691,7 @@
     // 儲存 JSON
     function saveJson(){
         const data={
-            members:Array.from(members.entries()).map(([id,m])=>({id,gender:m.gender,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,left:m.element.style.left,top:m.element.style.top})),
+            members:Array.from(members.entries()).map(([id,m])=>({id,gender:m.gender,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,isIP:m.isIP,left:m.element.style.left,top:m.element.style.top})),
             spousePairs:Array.from(spousePairs.entries()).map(([key,pair])=>({key,...pair})),
             partnerPairs:Array.from(partnerPairs.entries()).map(([key,pair])=>({key,...pair})),
             coParentPairs:Array.from(coParentPairs.entries()).map(([key,pair])=>({key,...pair})),
@@ -713,7 +711,9 @@
                 const data=JSON.parse(e.target.result);
                 if(!data.members||!Array.isArray(data.members)) throw new Error('格式錯誤');
                 clearCanvas();
-                data.members.forEach(m=>{ createMember(m.gender,{id:m.id,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,left:m.left,top:m.top}); });
+                data.members.forEach(m=>{
+                    createMember(m.gender,{id:m.id,name:m.name,age:m.age,occupation:m.occupation,note:m.note,deceased:m.deceased,isIP:m.isIP,left:m.left,top:m.top});
+                });
                 if(data.spousePairs) data.spousePairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) spousePairs.set(pair.key,{id1:pair.id1,id2:pair.id2,status:pair.status||'married'}); });
                 if(data.partnerPairs) data.partnerPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) partnerPairs.set(pair.key,{id1:pair.id1,id2:pair.id2,status:pair.status||'together'}); });
                 if(data.coParentPairs) data.coParentPairs.forEach(pair=>{ if(members.has(pair.id1)&&members.has(pair.id2)) coParentPairs.set(pair.key,{id1:pair.id1,id2:pair.id2}); });
@@ -748,6 +748,7 @@
     // 繪圖模式
     btnPencil.addEventListener('click',()=>{ exitRelationMode(); deselectMember(); exitDrawingMode(); drawingMode='pencil'; freehandCanvas.classList.add('active'); btnPencil.classList.add('active-mode'); });
     btnEraser.addEventListener('click',()=>{ exitRelationMode(); deselectMember(); exitDrawingMode(); drawingMode='eraser'; freehandCanvas.classList.add('active'); btnEraser.classList.add('active-mode'); });
+
     function exitDrawingMode(){
         drawingMode=null; isDrawing=false;
         freehandCanvas.classList.remove('active');
@@ -781,6 +782,7 @@
         }
         resizeFreehandCanvas();
         window.addEventListener('resize', resizeFreehandCanvas);
+
         freehandCanvas.addEventListener('mousedown',(e)=>{
             if(!drawingMode) return;
             isDrawing=true;
@@ -790,6 +792,7 @@
             lastX=e.clientX-rect.left;
             lastY=e.clientY-rect.top;
         });
+
         freehandCanvas.addEventListener('mousemove',(e)=>{
             if(!isDrawing||!drawingMode) return;
             const rect=freehandCanvas.getBoundingClientRect();
@@ -805,12 +808,19 @@
             freehandCtx.stroke();
             lastX=x; lastY=y;
         });
-        freehandCanvas.addEventListener('mouseup',()=>{ isDrawing=false; freehandCtx.globalCompositeOperation='source-over'; });
-        freehandCanvas.addEventListener('mouseleave',()=>{ isDrawing=false; freehandCtx.globalCompositeOperation='source-over'; });
+
+        freehandCanvas.addEventListener('mouseup',()=>{
+            isDrawing=false;
+            freehandCtx.globalCompositeOperation = 'source-over';
+        });
+        freehandCanvas.addEventListener('mouseleave',()=>{
+            isDrawing=false;
+            freehandCtx.globalCompositeOperation = 'source-over';
+        });
     }
     initFreehandCanvas();
 
-    // 顏色切換
+    // 顏色切換按鈕
     btnColorBlackAll.addEventListener('click',()=>{ canvas.classList.remove('all-black-except-emotion'); canvas.classList.add('all-black'); });
     btnColorBlackExceptEmotion.addEventListener('click',()=>{ canvas.classList.remove('all-black'); canvas.classList.add('all-black-except-emotion'); });
     btnColorOriginal.addEventListener('click',()=>{ canvas.classList.remove('all-black'); canvas.classList.remove('all-black-except-emotion'); });
@@ -821,5 +831,3 @@
     window.addEventListener('load',()=>{ setTimeout(()=>{ const m=createMember('male'); positionMemberAtCenter(members.get(m).element); const f=createMember('female'); positionMemberAtCenter(members.get(f).element); },100); });
 })();
 </script>
-</body>
-</html>
