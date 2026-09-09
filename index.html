@@ -147,9 +147,9 @@
             <ol>
                 <li><strong>新增成員：</strong>點擊「➕ 男性」、「➕ 女性」或「❓ 不明」按鈕，即可在畫布中央新增一位成員（男性：正方形，女性：圓形，不明：菱形）。拖曳成員可移動位置。</li>
                 <li><strong>設定配偶：</strong>點擊「💍 設為配偶」，接著依序點擊畫布上的兩位成員，系統會用<strong>黑色單線</strong>將他們連接。在側邊欄可修改配偶狀態（已婚／離婚／分居）。</li>
-                <li><strong>設定伴侶：</strong>點擊「💑 設為伴侶」，再依序點擊兩位成員，會以<strong>橙色雙線</strong>連接。側邊欄可修改伴侶狀態（同居／分手／離異）。</li>
+                <li><strong>設定伴侶：</strong>點擊「💑 設為伴侶」，再依序點擊兩位成員，會以<strong>橙色單實線＋單虛線</strong>連接。側邊欄可修改伴侶狀態（同居／分手／離異）。</li>
                 <li><strong>設定子女：</strong>點擊「👶 設為子女」→ 先點擊子女成員 → 再點擊一位或兩位父母 → 點擊「✅ 完成子女設定」或空白處。</li>
-                <li><strong>設定情感關係：</strong>點擊「❤️ 情感關係」，依序點擊兩位成員，再選擇關係類型（非常親密、親密、疏遠、衝突/欠佳、溝通中斷）。一位成員可與多位成員建立情感關係。</li>
+                <li><strong>設定情感關係：</strong>點擊「❤️ 情感關係」，依序點擊兩位成員，再選擇關係類型（非常親密、親密、疏遠、衝突/欠佳、溝通中斷、愛恨交織）。一位成員可與多位成員建立情感關係。</li>
                 <li><strong>編輯成員：</strong>點擊成員，右側面板可修改姓名、性別、年齡、職業、備註、已故狀態，以及配偶／伴侶／情感關係。</li>
                 <li><strong>刪除成員：</strong>先點選成員，再點擊「🗑️ 刪除成員」。</li>
                 <li><strong>文字方塊：</strong>點擊「📝 文字方塊」新增，可拖曳、編輯、刪除。匯出 PNG 時不會顯示控制項。</li>
@@ -183,6 +183,7 @@
                 <button data-type="distant">疏遠</button>
                 <button data-type="conflict">衝突/欠佳</button>
                 <button data-type="broken">溝通中斷</button>
+                <button data-type="ambivalent">愛恨交織</button>
             </div>
             <button id="btnAddTextBox" class="text-box-btn">📝 文字方塊</button>
             <span style="margin-left:10px; font-weight:bold;">顏色：</span>
@@ -300,9 +301,7 @@
     const coParentPairs = new Map();
     const childMap = new Map();
     const emotionalPairs = new Map();
-
     let emotionalPendingPair = null;
-
     let textBoxIdCounter = 0;
     const textBoxes = new Map();
     let selectedTextBoxId = null;
@@ -336,6 +335,7 @@
             case 'distant': return '疏遠'; 
             case 'conflict': return '衝突/欠佳'; 
             case 'broken': return '溝通中斷'; 
+            case 'ambivalent': return '愛恨交織'; 
             default: return ''; 
         } 
     }
@@ -416,7 +416,7 @@
         html+='</ul>'; parseResult.innerHTML=html;
     }
 
-    // ========== 建立成員（無內部文字） ==========
+    // ========== 建立成員 ==========
     function createMember(gender, options={}) {
         let id = options.id || generateId();
         if (options.id) { const num = parseInt(id.replace('member-','')); if (!isNaN(num)) memberIdCounter = Math.max(memberIdCounter, num); }
@@ -492,7 +492,7 @@
             const item=document.createElement('div'); item.className='emotional-item';
             const nameSpan=document.createElement('span'); nameSpan.textContent=otherName; nameSpan.style.minWidth='40px'; nameSpan.style.fontSize='0.85rem';
             const select=document.createElement('select'); 
-            select.innerHTML=`<option value="very_close" ${pair.type==='very_close'?'selected':''}>非常親密</option><option value="close" ${pair.type==='close'?'selected':''}>親密</option><option value="distant" ${pair.type==='distant'?'selected':''}>疏遠</option><option value="conflict" ${pair.type==='conflict'?'selected':''}>衝突/欠佳</option><option value="broken" ${pair.type==='broken'?'selected':''}>溝通中斷</option>`;
+            select.innerHTML=`<option value="very_close" ${pair.type==='very_close'?'selected':''}>非常親密</option><option value="close" ${pair.type==='close'?'selected':''}>親密</option><option value="distant" ${pair.type==='distant'?'selected':''}>疏遠</option><option value="conflict" ${pair.type==='conflict'?'selected':''}>衝突/欠佳</option><option value="broken" ${pair.type==='broken'?'selected':''}>溝通中斷</option><option value="ambivalent" ${pair.type==='ambivalent'?'selected':''}>愛恨交織</option>`;
             select.addEventListener('change',()=>{ pair.type=select.value; drawAllRelations(); });
             const delBtn=document.createElement('button'); delBtn.textContent='🗑️'; delBtn.addEventListener('click',()=>{ emotionalPairs.delete(key); drawAllRelations(); renderEmotionalList(m); });
             item.appendChild(nameSpan); item.appendChild(select); item.appendChild(delBtn); emotionalList.appendChild(item);
@@ -593,7 +593,7 @@
         relationHint.style.display='inline-block'; relationHint.textContent='子女關係已建立'; setTimeout(()=>{ relationHint.style.display='none'; },2000);
     }
 
-    // ========== 繪製關係線（包含溝通中斷） ==========
+    // ========== 繪製關係線（含所有改良） ==========
     function drawAllRelations(){
         while(relationSvg.firstChild) relationSvg.removeChild(relationSvg.firstChild);
         // 配偶線
@@ -604,17 +604,20 @@
             else if(pair.status==='separated'){ line.setAttribute('stroke-dasharray','5,5'); relationSvg.appendChild(line); }
             else relationSvg.appendChild(line);
         }
-        // 伴侶線
+        // 伴侶線（同居/交往中：單實線＋單虛線）
         for(let [k,pair] of partnerPairs){
             const p1=getMemberCenter(pair.id1), p2=getMemberCenter(pair.id2); if(!p1||!p2) continue;
             const dx=p2.x-p1.x,dy=p2.y-p1.y,len=Math.sqrt(dx*dx+dy*dy)||1,nx=-dy/len*4,ny=dx/len*4;
             const l1=document.createElementNS('http://www.w3.org/2000/svg','line'); l1.setAttribute('x1',p1.x+nx); l1.setAttribute('y1',p1.y+ny); l1.setAttribute('x2',p2.x+nx); l1.setAttribute('y2',p2.y+ny); l1.setAttribute('stroke','#e67e22'); l1.setAttribute('stroke-width','2');
             const l2=document.createElementNS('http://www.w3.org/2000/svg','line'); l2.setAttribute('x1',p1.x-nx); l2.setAttribute('y1',p1.y-ny); l2.setAttribute('x2',p2.x-nx); l2.setAttribute('y2',p2.y-ny); l2.setAttribute('stroke','#e67e22'); l2.setAttribute('stroke-width','2');
+            if(pair.status==='together'){
+                l2.setAttribute('stroke-dasharray','6,4');
+            }
             relationSvg.appendChild(l1); relationSvg.appendChild(l2);
             if(pair.status==='separated'){ const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2; const s=document.createElementNS('http://www.w3.org/2000/svg','line'); s.setAttribute('x1',mx-8); s.setAttribute('y1',my-8); s.setAttribute('x2',mx+8); s.setAttribute('y2',my+8); s.setAttribute('stroke','#e67e22'); s.setAttribute('stroke-width','2'); relationSvg.appendChild(s); }
             else if(pair.status==='divorced'){ const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2; const s1=document.createElementNS('http://www.w3.org/2000/svg','line'); s1.setAttribute('x1',mx-6); s1.setAttribute('y1',my-6); s1.setAttribute('x2',mx+6); s1.setAttribute('y2',my+6); s1.setAttribute('stroke','#e67e22'); s1.setAttribute('stroke-width','2'); const s2=document.createElementNS('http://www.w3.org/2000/svg','line'); s2.setAttribute('x1',mx-6); s2.setAttribute('y1',my+6); s2.setAttribute('x2',mx+6); s2.setAttribute('y2',my-6); s2.setAttribute('stroke','#e67e22'); s2.setAttribute('stroke-width','2'); relationSvg.appendChild(s1); relationSvg.appendChild(s2); }
         }
-        // 情感線（包含溝通中斷）
+        // 情感線（包含所有類型）
         for(let [k,pair] of emotionalPairs){
             const p1=getMemberCenter(pair.id1), p2=getMemberCenter(pair.id2); if(!p1||!p2) continue;
             const dx=p2.x-p1.x,dy=p2.y-p1.y,len=Math.sqrt(dx*dx+dy*dy)||1,nx=-dy/len*12,ny=dx/len*12;
@@ -669,20 +672,15 @@
                     relationSvg.appendChild(wavePath);
                     break;
                 case 'broken':
-                    // 斷裂標記：兩段線，中間留空，並在斷裂處畫垂直短線
-                    const gap = 18; // 中斷間隙長度
+                    const gap = 18;
                     const gapHalf = gap / 2;
-                    // 計算中斷處的兩個點（沿線方向）
                     const midX = (x1 + x2) / 2;
                     const midY = (y1 + y2) / 2;
-                    // 左段終點
                     const leftEndX = midX - (dx / len) * gapHalf;
                     const leftEndY = midY - (dy / len) * gapHalf;
-                    // 右段起點
                     const rightStartX = midX + (dx / len) * gapHalf;
                     const rightStartY = midY + (dy / len) * gapHalf;
 
-                    // 左段線
                     const leftLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     leftLine.setAttribute('x1', x1); leftLine.setAttribute('y1', y1);
                     leftLine.setAttribute('x2', leftEndX); leftLine.setAttribute('y2', leftEndY);
@@ -690,7 +688,6 @@
                     leftLine.setAttribute('class', 'emotional-line');
                     relationSvg.appendChild(leftLine);
 
-                    // 右段線
                     const rightLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
                     rightLine.setAttribute('x1', rightStartX); rightLine.setAttribute('y1', rightStartY);
                     rightLine.setAttribute('x2', x2); rightLine.setAttribute('y2', y2);
@@ -698,8 +695,7 @@
                     rightLine.setAttribute('class', 'emotional-line');
                     relationSvg.appendChild(rightLine);
 
-                    // 垂直短線（左端）
-                    const perpLen = 5; // 垂直短線半長度
+                    const perpLen = 5;
                     const leftPerpX = -dy / len * perpLen;
                     const leftPerpY = dx / len * perpLen;
                     const leftVertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -711,7 +707,6 @@
                     leftVertical.setAttribute('class', 'emotional-line');
                     relationSvg.appendChild(leftVertical);
 
-                    // 垂直短線（右端）
                     const rightPerpX = -dy / len * perpLen;
                     const rightPerpY = dx / len * perpLen;
                     const rightVertical = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -722,6 +717,41 @@
                     rightVertical.setAttribute('stroke', '#e74c3c'); rightVertical.setAttribute('stroke-width', '2');
                     rightVertical.setAttribute('class', 'emotional-line');
                     relationSvg.appendChild(rightVertical);
+                    break;
+                case 'ambivalent':
+                    const solidLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    solidLine.setAttribute('x1', x1); solidLine.setAttribute('y1', y1);
+                    solidLine.setAttribute('x2', x2); solidLine.setAttribute('y2', y2);
+                    solidLine.setAttribute('stroke', '#e74c3c'); solidLine.setAttribute('stroke-width', '3');
+                    solidLine.setAttribute('class', 'emotional-line');
+                    relationSvg.appendChild(solidLine);
+
+                    const offset = 8;
+                    const perpOffsetX = -dy / len * offset;
+                    const perpOffsetY = dx / len * offset;
+                    const zigX1 = x1 + perpOffsetX;
+                    const zigY1 = y1 + perpOffsetY;
+                    const zigX2 = x2 + perpOffsetX;
+                    const zigY2 = y2 + perpOffsetY;
+                    const zigSegments = Math.max(Math.floor(len / 10), 3);
+                    let zigD = `M ${zigX1} ${zigY1}`;
+                    for (let i = 1; i <= zigSegments; i++) {
+                        const t = i / zigSegments;
+                        const baseX = zigX1 + (zigX2 - zigX1) * t;
+                        const baseY = zigY1 + (zigY2 - zigY1) * t;
+                        const sign = (i % 2 === 0) ? 1 : -1;
+                        const offsetAmp = 6;
+                        const cx = baseX + (-dy / len) * offsetAmp * sign;
+                        const cy = baseY + (dx / len) * offsetAmp * sign;
+                        zigD += ` L ${cx} ${cy}`;
+                    }
+                    zigD += ` L ${zigX2} ${zigY2}`;
+                    const zigPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    zigPath.setAttribute('d', zigD);
+                    zigPath.setAttribute('stroke', '#e74c3c'); zigPath.setAttribute('stroke-width', '2');
+                    zigPath.setAttribute('fill', 'none');
+                    zigPath.setAttribute('class', 'emotional-line');
+                    relationSvg.appendChild(zigPath);
                     break;
             }
         }
