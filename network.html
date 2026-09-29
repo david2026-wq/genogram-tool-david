@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>乃木坂46 五期生親密度網絡圖</title>
+<style>
+  :root{
+    --purple:#5E338D;
+    --purple-dark:#422266;
+    --bg:#F4F1FA;
+    --text:#2B2B33;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:18px;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif;
+  }
+  .toolbar{
+    max-width:1650px;
+    margin:0 auto 14px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+  }
+  .toolbar h1{
+    margin:0;
+    font-size:1.35rem;
+    color:var(--purple-dark);
+    margin-right:auto;
+  }
+  button,label.toggle{
+    border:0;
+    cursor:pointer;
+    border-radius:999px;
+    padding:10px 16px;
+    font-weight:800;
+    font-size:.95rem;
+  }
+  button.primary{
+    background:var(--purple);
+    color:#fff;
+    box-shadow:0 8px 18px rgba(94,51,141,.2);
+  }
+  button.secondary{
+    background:#fff;
+    color:var(--purple-dark);
+    border:1px solid #CBB8E6;
+  }
+  label.toggle{
+    background:#fff;
+    color:var(--purple-dark);
+    border:1px solid #CBB8E6;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    user-select:none;
+  }
+  .card{
+    max-width:1650px;
+    margin:0 auto;
+    background:#fff;
+    border-radius:18px;
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+    padding:14px;
+  }
+  svg{
+    width:100%;
+    height:auto;
+    display:block;
+    border-radius:14px;
+    background:#FBFAFE;
+  }
+  .note{
+    max-width:1650px;
+    margin:12px auto 0;
+    font-size:.92rem;
+    color:#5B5B66;
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>乃木坂46 五期生親密度網絡圖</h1>
+  <label class="toggle">
+    <input id="showLabels" type="checkbox" onchange="toggleLabels()" />
+    顯示權重數字
+  </label>
+  <button class="primary" onclick="downloadSVG()">⬇️ 下載 SVG 網絡圖</button>
+  <button class="secondary" onclick="downloadHTML()">⬇️ 下載完整 HTML</button>
+</div>
+
+<div class="card">
+  <svg id="net" viewBox="0 0 1650 1000" width="1650" height="1000" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="1650" height="1000" fill="#FBFAFE"></rect>
+
+    <defs>
+      <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#DC2626"></path>
+      </marker>
+      <marker id="arrow2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#F97316"></path>
+      </marker>
+      <marker id="arrow1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#9CA3AF"></path>
+      </marker>
+    </defs>
+
+    <text x="825" y="52" text-anchor="middle" font-size="34" font-weight="900" fill="#3B2352">
+      乃木坂46 五期生親密度網絡圖
+    </text>
+    <text x="825" y="86" text-anchor="middle" font-size="17" fill="#6B6B78">
+      箭頭方向：給出親密度；線條粗細：權重；節點大小：收到親密度（入度權重）
+    </text>
+
+    <g id="legend">
+      <rect x="28" y="116" width="305" height="285" rx="16" fill="#FFFFFF" stroke="#E4DCF2" stroke-width="1.5"></rect>
+      <text x="48" y="152" font-size="17" font-weight="900" fill="#3B2352">圖例</text>
+
+      <circle cx="60" cy="184" r="11" fill="#6D28D9"></circle>
+      <text x="82" y="190" font-size="14" fill="#2B2B33">絕對核心（入度 13）</text>
+
+      <circle cx="60" cy="216" r="11" fill="#A855F7"></circle>
+      <text x="82" y="222" font-size="14" fill="#2B2B33">核心（入度 8）</text>
+
+      <circle cx="60" cy="248" r="11" fill="#3B82F6"></circle>
+      <text x="82" y="254" font-size="14" fill="#2B2B33">次核心（入度 4–5）</text>
+
+      <circle cx="60" cy="280" r="11" fill="#F59E0B"></circle>
+      <text x="82" y="286" font-size="14" fill="#2B2B33">戰略外圍／被低估 ⭐</text>
+
+      <line x1="48" y1="312" x2="95" y2="312" stroke="#DC2626" stroke-width="6" stroke-linecap="round"></line>
+      <text x="108" y="318" font-size="14" fill="#2B2B33">3 分（滿分強邊）</text>
+
+      <line x1="48" y1="342" x2="95" y2="342" stroke="#F97316" stroke-width="4.2" stroke-linecap="round"></line>
+      <text x="108" y="348" font-size="14" fill="#2B2B33">2 分</text>
+
+      <line x1="48" y1="372" x2="95" y2="372" stroke="#9CA3AF" stroke-width="2.4" stroke-linecap="round"></line>
+      <text x="108" y="378" font-size="14" fill="#2B2B33">1 分</text>
+    </g>
+
+    <g id="edges"></g>
+    <g id="edgeLabels" style="display:none;"></g>
+    <g id="nodes"></g>
+  </svg>
+</div>
+
+<div class="note">
+  說明：本圖為向量網路圖（SVG），可直接下載後用瀏覽器打開，也可插入簡報或網頁。滑鼠移到線上可看到「誰 → 誰：幾分」。
+</div>
+
+<script>
+  const svgNS = "http://www.w3.org/2000/svg";
+
+  const nodes = [
+    {id:"井上和", x:860, y:205, inWeight:8, cat:"core"},
+    {id:"一之瀬美空", x:610, y:545, inWeight:13, cat:"absolute"},
+    {id:"菅原咲月", x:820, y:435, inWeight:13, cat:"absolute"},
+    {id:"小川彩", x:430, y:690, inWeight:4, cat:"sub"},
+    {id:"五百城茉央", x:1235, y:390, inWeight:8, cat:"core"},
+    {id:"池田瑛紗", x:530, y:300, inWeight:3, cat:"strategic", star:true},
+    {id:"川﨑桜", x:325, y:455, inWeight:1, cat:"strategic", star:true},
+    {id:"中西アルノ", x:1085, y:225, inWeight:8, cat:"core"},
+    {id:"冨里奈央", x:1205, y:705, inWeight:3, cat:"strategic", star:true},
+    {id:"奥田伊吕波", x:1405, y:525, inWeight:5, cat:"sub"},
+    {id:"岡本姫奈", x:565, y:815, inWeight:0, cat:"strategic", star:true}
+  ];
+
+  const links = [
+    {source:"井上和", target:"菅原咲月", weight:2},
+    {source:"井上和", target:"五百城茉央", weight:1},
+    {source:"井上和", target:"中西アルノ", weight:3},
+
+    {source:"一之瀬美空", target:"菅原咲月", weight:2},
+    {source:"一之瀬美空", target:"小川彩", weight:3},
+    {source:"一之瀬美空", target:"川﨑桜", weight:1},
+
+    {source:"菅原咲月", target:"井上和", weight:2},
+    {source:"菅原咲月", target:"一之瀬美空", weight:3},
+    {source:"菅原咲月", target:"五百城茉央", weight:1},
+
+    {source:"小川彩", target:"一之瀬美空", weight:3},
+    {source:"小川彩", target:"池田瑛紗", weight:1},
+    {source:"小川彩", target:"奥田伊吕波", weight:2},
+
+    {source:"五百城茉央", target:"菅原咲月", weight:2},
+    {source:"五百城茉央", target:"冨里奈央", weight:1},
+    {source:"五百城茉央", target:"奥田伊吕波", weight:3},
+
+    {source:"池田瑛紗", target:"一之瀬美空", weight:1},
+    {source:"池田瑛紗", target:"菅原咲月", weight:3},
+    {source:"池田瑛紗", target:"中西アルノ", weight:2},
+
+    {source:"川﨑桜", target:"井上和", weight:2},
+    {source:"川﨑桜", target:"一之瀬美空", weight:3},
+    {source:"川﨑桜", target:"池田瑛紗", weight:1},
+
+    {source:"中西アルノ", target:"井上和", weight:3},
+    {source:"中西アルノ", target:"池田瑛紗", weight:1},
+    {source:"中西アルノ", target:"冨里奈央", weight:2},
+
+    {source:"冨里奈央", target:"井上和", weight:1},
+    {source:"冨里奈央", target:"五百城茉央", weight:3},
+    {source:"冨里奈央", target:"中西アルノ", weight:2},
+
+    {source:"奥田伊吕波", target:"菅原咲月", weight:2},
+    {source:"奥田伊吕波", target:"小川彩", weight:1},
+    {source:"奥田伊吕波", target:"五百城茉央", weight:3},
+
+    {source:"岡本姫奈", target:"一之瀬美空", weight:3},
+    {source:"岡本姫奈", target:"菅原咲月", weight:2},
+    {source:"岡本姫奈", target:"中西アルノ", weight:1}
+  ];
+
+  const catColors = {
+    absolute:"#6D28D9",
+    core:"#A855F7",
+    sub:"#3B82F6",
+    strategic:"#F59E0B"
+  };
+
+  const weightColors = {
+    1:"#9CA3AF",
+    2:"#F97316",
+    3:"#DC2626"
+  };
+
+  function clearGroup(g){
+    while (g.firstChild) g.removeChild(g.firstChild);
+  }
+
+  function makeSVG(tag, attrs){
+    const el = document.createElementNS(svgNS, tag);
+    for (const k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
+  function renderGraph(){
+    const edgesG = document.getElementById("edges");
+    const edgeLabelsG = document.getElementById("edgeLabels");
+    const nodesG = document.getElementById("nodes");
+
+    clearGroup(edgesG);
+    clearGroup(edgeLabelsG);
+    clearGroup(nodesG);
+
+    const nodeById = new Map();
+    nodes.forEach(n => {
+      n.r = 21 + n.inWeight * 1.85;
+      nodeById.set(n.id, n);
+    });
+
+    const linkKeys = new Set(links.map(l => l.source + "->" + l.target));
+
+    links.forEach(link => {
+      const s = nodeById.get(link.source);
+      const t = nodeById.get(link.target);
+
+      const dx = t.x - s.x;
+      const dy = t.y - s.y;
+      const dist = Math.hypot(dx, dy) || 1;
+
+      const hasReverse = linkKeys.has(link.target + "->" + link.source);
+      const sign = link.source < link.target ? 1 : -1;
+      const curvature = hasReverse ? 0.25 : 0.13;
+      const offset = dist * curvature * sign;
+
+      const nx = -dy / dist;
+      const ny = dx / dist;
+
+      const cx = (s.x + t.x) / 2 + nx * offset;
+      const cy = (s.y + t.y) / 2 + ny * offset;
+
+      let v1x = cx - s.x;
+      let v1y = cy - s.y;
+      let d1 = Math.hypot(v1x, v1y) || 1;
+      const sx = s.x + (v1x / d1) * (s.r + 5);
+      const sy = s.y + (v1y / d1) * (s.r + 5);
+
+      let v2x = t.x - cx;
+      let v2y = t.y - cy;
+      let d2 = Math.hypot(v2x, v2y) || 1;
+      const tx = t.x - (v2x / d2) * (t.r + 13);
+      const ty = t.y - (v2y / d2) * (t.r + 13);
+
+      const path = makeSVG("path", {
+        d: `M ${sx} ${sy} Q ${cx} ${cy} ${tx} ${ty}`,
+        fill: "none",
+        stroke: weightColors[link.weight],
+        "stroke-width": link.weight * 2.35,
+        "stroke-opacity": 0.78,
+        "stroke-linecap": "round",
+        "marker-end": `url(#arrow${link.weight})`
+      });
+
+      const title = document.createElementNS(svgNS, "title");
+      title.textContent = `${link.source} → ${link.target}：${link.weight} 分`;
+      path.appendChild(title);
+      edgesG.appendChild(path);
+
+      const lx = 0.25 * sx + 0.5 * cx + 0.25 * tx;
+      const ly = 0.25 * sy + 0.5 * cy + 0.25 * ty;
+
+      const label = makeSVG("text", {
+        x: lx,
+        y: ly,
+        "text-anchor": "middle",
+        "font-size": "13",
+        "font-weight": "900",
+        fill: "#111827",
+        stroke: "#FFFFFF",
+        "stroke-width": "3.2",
+        "paint-order": "stroke"
+      });
+      label.textContent = link.weight;
+      edgeLabelsG.appendChild(label);
+    });
+
+    const sortedNodes = [...nodes].sort((a,b) => b.r - a.r);
+
+    sortedNodes.forEach(n => {
+      const g = makeSVG("g", {cursor:"pointer"});
+
+      const title = document.createElementNS(svgNS, "title");
+      title.textContent = `${n.id}：收到 ${n.inWeight} 分`;
+      g.appendChild(title);
+
+      const circle = makeSVG("circle", {
+        cx: n.x,
+        cy: n.y,
+        r: n.r,
+        fill: catColors[n.cat],
+        stroke: "#FFFFFF",
+        "stroke-width": 4
+      });
+      g.appendChild(circle);
+
+      const num = makeSVG("text", {
+        x: n.x,
+        y: n.y + 6,
+        "text-anchor": "middle",
+        "font-size": n.r > 34 ? 21 : 16,
+        "font-weight": "900",
+        fill: "#FFFFFF"
+      });
+      num.textContent = n.inWeight;
+      g.appendChild(num);
+
+      const label = makeSVG("text", {
+        x: n.x,
+        y: n.y + n.r + 22,
+        "text-anchor": "middle",
+        "font-size": "15",
+        "font-weight": "900",
+        fill: "#1F2937",
+        stroke: "#FFFFFF",
+        "stroke-width": "4.5",
+        "paint-order": "stroke"
+      });
+      label.textContent = (n.star ? "⭐" : "") + n.id;
+      g.appendChild(label);
+
+      nodesG.appendChild(g);
+    });
+
+    toggleLabels();
+  }
+
+  function toggleLabels(){
+    const show = document.getElementById("showLabels").checked;
+    document.getElementById("edgeLabels").style.display = show ? "block" : "none";
+  }
+
+  function downloadSVG(){
+    const svg = document.getElementById("net");
+    svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    const data = '<?xml version="1.0" encoding="UTF-8"?>\n' + new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([data], {type:"image/svg+xml;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "乃木坂46_五期生_親密度網絡圖.svg";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadHTML(){
+    const data = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    const blob = new Blob([data], {type:"text/html;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "乃木坂46_五期生_親密度網絡圖.html";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  renderGraph();
+</script>
+
+</body>
+</html>
